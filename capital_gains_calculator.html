@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capital Gains Tax Calculator</title>
+    <style>
+        body {
+            font-family: 'Calibri', Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c5f2d;
+            text-align: center;
+            border-bottom: 3px solid #2c5f2d;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #1f4e78;
+            margin-top: 30px;
+            background-color: #d9e2f3;
+            padding: 10px;
+            border-left: 5px solid #1f4e78;
+        }
+        h3 {
+            color: #c45911;
+            margin-top: 20px;
+            background-color: #fce4d6;
+            padding: 8px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background-color: white;
+        }
+        th {
+            background-color: #4472c4;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+            border: 1px solid #2c5f2d;
+        }
+        td {
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .amount {
+            text-align: right;
+            font-family: 'Courier New', monospace;
+        }
+        .highlight {
+            background-color: #fff2cc;
+            font-weight: bold;
+        }
+        .total-row {
+            background-color: #e2efda;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        .recommended {
+            background-color: #c6e0b4;
+            font-weight: bold;
+        }
+        .section-header {
+            background-color: #d0cece;
+            font-weight: bold;
+            text-align: center;
+        }
+        .info-box {
+            background-color: #fff4e6;
+            border-left: 4px solid #ff8c00;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .warning-box {
+            background-color: #ffe6e6;
+            border-left: 4px solid #dc3545;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .success-box {
+            background-color: #e6ffe6;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .formula {
+            font-style: italic;
+            color: #666;
+            font-size: 0.9em;
+        }
+        @media print {
+            body {
+                background-color: white;
+            }
+            .container {
+                box-shadow: none;
+            }
+        }
+        .note {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+        .button-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        button {
+            background-color: #4472c4;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #2c5f2d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CAPITAL GAINS TAX CALCULATION - PROPERTY SALE</h1>
+        
+        <h2>📋 TRANSACTION DETAILS</h2>
+        <table>
+            <tr>
+                <th style="width: 40%;">Particulars</th>
+                <th style="width: 60%;">Details</th>
+            </tr>
+            <tr>
+                <td>Property Address</td>
+                <td>Mandavali, Delhi</td>
+            </tr>
+            <tr>
+                <td>Date of Sale</td>
+                <td>February 2025</td>
+            </tr>
+            <tr>
+                <td>Financial Year (FY)</td>
+                <td class="highlight">2024-25</td>
+            </tr>
+            <tr>
+                <td>Assessment Year (AY)</td>
+                <td class="highlight">2025-26</td>
+            </tr>
+            <tr>
+                <td>Date of Purchase</td>
+                <td>January 2003</td>
+            </tr>
+            <tr>
+                <td>Holding Period</td>
+                <td>22 years (Long-Term Capital Asset)</td>
+            </tr>
+            <tr>
+                <td>Taxpayer Age</td>
+                <td>66 years (Senior Citizen)</td>
+            </tr>
+            <tr>
+                <td>ITR Form Required</td>
+                <td>ITR-2</td>
+            </tr>
+        </table>
+
+        <h2>💰 BASIC TRANSACTION VALUES</h2>
+        <table>
+            <tr>
+                <th>Description</th>
+                <th>Date</th>
+                <th class="amount">Amount (Rs)</th>
+            </tr>
+            <tr>
+                <td>Sale Consideration</td>
+                <td>February 2025</td>
+                <td class="amount">1,76,00,000</td>
+            </tr>
+            <tr>
+                <td>Original Purchase Cost</td>
+                <td>January 2003</td>
+                <td class="amount">25,00,000</td>
+            </tr>
+            <tr>
+                <td>Cost of Improvement</td>
+                <td>December 2020</td>
+                <td class="amount">10,00,000</td>
+            </tr>
+            <tr class="total-row">
+                <td>Total Investment</td>
+                <td>-</td>
+                <td class="amount">35,00,000</td>
+            </tr>
+        </table>
+
+        <h2>📊 OPTION 1: TAX @ 12.5% WITHOUT INDEXATION</h2>
+        <table>
+            <tr>
+                <th style="width: 60%;">Particulars</th>
+                <th style="width: 20%;">Computation</th>
+                <th style="width: 20%;" class="amount">Amount (Rs)</th>
+            </tr>
+            <tr>
+                <td>Sale Consideration</td>
+                <td class="formula">(A)</td>
+                <td class="amount">1,76,00,000</td>
+            </tr>
+            <tr>
+                <td>Less: Cost of Acquisition (Jan 2003)</td>
+                <td class="formula">(B)</td>
+                <td class="amount">25,00,000</td>
+            </tr>
+            <tr>
+                <td>Less: Cost of Improvement (Dec 2020)</td>
+                <td class="formula">(C)</td>
+                <td class="amount">10,00,000</td>
+            </tr>
+            <tr class="highlight">
+                <td><strong>Long-Term Capital Gains</strong></td>
+                <td class="formula">(A-B-C)</td>
+                <td class="amount"><strong>1,41,00,000</strong></td>
+            </tr>
+            <tr>
+                <td>Tax on LTCG @ 12.5%</td>
+                <td class="formula">(D)</td>
+                <td class="amount">17,62,500</td>
+            </tr>
+            <tr>
+                <td>Add: Health & Education Cess @ 4%</td>
+                <td class="formula">(E) = D × 4%</td>
+                <td class="amount">70,500</td>
+            </tr>
+            <tr class="total-row">
+                <td><strong>TOTAL TAX PAYABLE (Option 1)</strong></td>
+                <td class="formula">(D+E)</td>
+                <td class="amount"><strong>18,33,000</strong></td>
+            </tr>
+        </table>
+
+        <h2>✅ OPTION 2: TAX @ 20% WITH INDEXATION (RECOMMENDED)</h2>
+        
+        <h3>Cost Inflation Index (CII) Values</h3>
+        <table>
+            <tr>
+                <th>Financial Year</th>
+                <th>Event</th>
+                <th class="amount">CII Value</th>
+            </tr>
+            <tr>
+                <td>FY 2002-03</td>
+                <td>Original Purchase (Jan 2003)</td>
+                <td class="amount">105</td>
+            </tr>
+            <tr>
+                <td>FY 2020-21</td>
+                <td>Cost of Improvement (Dec 2020)</td>
+                <td class="amount">301</td>
+            </tr>
+            <tr class="highlight">
+                <td>FY 2024-25</td>
+                <td>Sale Year (Feb 2025)</td>
+                <td class="amount">363</td>
+            </tr>
+        </table>
+
+        <h3>Indexed Cost Calculation</h3>
+        <table>
+            <tr>
+                <th style="width: 50%;">Particulars</th>
+                <th style="width: 30%;">Formula</th>
+                <th style="width: 20%;" class="amount">Amount (Rs)</th>
+            </tr>
+            <tr class="section-header">
+                <td colspan="3">INDEXED COST OF ACQUISITION</td>
+            </tr>
+            <tr>
+                <td>Original Cost of Acquisition</td>
+                <td class="formula">-</td>
+                <td class="amount">25,00,000</td>
+            </tr>
+            <tr>
+                <td>CII of Sale Year / CII of Purchase Year</td>
+                <td class="formula">363 / 105</td>
+                <td class="amount">3.457</td>
+            </tr>
+            <tr class="highlight">
+                <td><strong>Indexed Cost of Acquisition</strong></td>
+                <td class="formula">25,00,000 × 3.457</td>
+                <td class="amount"><strong>86,42,857</strong></td>
+            </tr>
+            <tr class="section-header">
+                <td colspan="3">INDEXED COST OF IMPROVEMENT</td>
+            </tr>
+            <tr>
+                <td>Original Cost of Improvement</td>
+                <td class="formula">-</td>
+                <td class="amount">10,00,000</td>
+            </tr>
+            <tr>
+                <td>CII of Sale Year / CII of Improvement Year</td>
+                <td class="formula">363 / 301</td>
+                <td class="amount">1.206</td>
+            </tr>
+            <tr class="highlight">
+                <td><strong>Indexed Cost of Improvement</strong></td>
+                <td class="formula">10,00,000 × 1.206</td>
+                <td class="amount"><strong>12,06,312</strong></td>
+            </tr>
+        </table>
+
+        <h3>Tax Calculation with Indexation</h3>
+        <table>
+            <tr>
+                <th style="width: 60%;">Particulars</th>
+                <th style="width: 20%;">Reference</th>
+                <th style="width: 20%;" class="amount">Amount (Rs)</th>
+            </tr>
+            <tr>
+                <td>Sale Consideration</td>
+                <td class="formula">(A)</td>
+                <td class="amount">1,76,00,000</td>
+            </tr>
+            <tr>
+                <td>Less: Indexed Cost of Acquisition</td>
+                <td class="formula">(B)</td>
+                <td class="amount">86,42,857</td>
+            </tr>
+            <tr>
+                <td>Less: Indexed Cost of Improvement</td>
+                <td class="formula">(C)</td>
+                <td class="amount">12,06,312</td>
+            </tr>
+            <tr>
+                <td><strong>Total Indexed Cost</strong></td>
+                <td class="formula">(B+C)</td>
+                <td class="amount"><strong>98,49,169</strong></td>
+            </tr>
+            <tr class="highlight">
+                <td><strong>Long-Term Capital Gains</strong></td>
+                <td class="formula">(A-B-C)</td>
+                <td class="amount"><strong>77,50,831</strong></td>
+            </tr>
+            <tr>
+                <td>Tax on LTCG @ 20%</td>
+                <td class="formula">(D)</td>
+                <td class="amount">15,50,166</td>
+            </tr>
+            <tr>
+                <td>Add: Health & Education Cess @ 4%</td>
+                <td class="formula">(E) = D × 4%</td>
+                <td class="amount">62,007</td>
+            </tr>
+            <tr>
+                <td>Surcharge (Income < Rs 50 Lakhs)</td>
+                <td class="formula">-</td>
+                <td class="amount">NIL</td>
+            </tr>
+            <tr class="total-row recommended">
+                <td><strong>TOTAL TAX PAYABLE (Option 2) ✓</strong></td>
+                <td class="formula">(D+E)</td>
+                <td class="amount"><strong>16,12,173</strong></td>
+            </tr>
+        </table>
+
+        <div class="success-box">
+            <strong>💡 TAX SAVING BY CHOOSING INDEXATION:</strong><br>
+            Option 1 Tax: Rs 18,33,000<br>
+            Option 2 Tax: Rs 16,12,173<br>
+            <strong style="color: #28a745;">You Save: Rs 2,20,827 by choosing Option 2 (20% with Indexation)</strong>
+        </div>
+
+        <h2>⚖️ COMPARISON: OPTION 1 vs OPTION 2</h2>
+        <table>
+            <tr>
+                <th>Parameter</th>
+                <th class="amount">Option 1 (12.5% No Indexation)</th>
+                <th class="amount">Option 2 (20% With Indexation) ✓</th>
+            </tr>
+            <tr>
+                <td>Sale Consideration</td>
+                <td class="amount">1,76,00,000</td>
+                <td class="amount">1,76,00,000</td>
+            </tr>
+            <tr>
+                <td>Cost (Actual/Indexed)</td>
+                <td class="amount">35,00,000</td>
+                <td class="amount">98,49,169</td>
+            </tr>
+            <tr class="highlight">
+                <td><strong>Capital Gains</strong></td>
+                <td class="amount"><strong>1,41,00,000</strong></td>
+                <td class="amount"><strong>77,50,831</strong></td>
+            </tr>
+            <tr>
+                <td>Tax Rate</td>
+                <td class="amount">12.5%</td>
+                <td class="amount">20%</td>
+            </tr>
+            <tr>
+                <td>Tax on Capital Gains</td>
+                <td class="amount">17,62,500</td>
+                <td class="amount">15,50,166</td>
+            </tr>
+            <tr>
+                <td>Cess @ 4%</td>
+                <td class="amount">70,500</td>
+                <td class="amount">62,007</td>
+            </tr>
+            <tr class="total-row">
+                <td><strong>Total Tax Payable</strong></td>
+                <td class="amount"><strong>18,33,000</strong></td>
+                <td class="amount recommended"><strong>16,12,173</strong></td>
+            </tr>
+            <tr class="recommended">
+                <td><strong>Tax Saving</strong></td>
+                <td class="amount">-</td>
+                <td class="amount"><strong>2,20,827</strong></td>
+            </tr>
+        </table>
+
+        <h2>🎯 TAX REGIME COMPARISON</h2>
+        <table>
+            <tr>
+                <th>Feature</th>
+                <th>Old Tax Regime</th>
+                <th>New Tax Regime</th>
+            </tr>
+            <tr>
+                <td>Basic Exemption (Senior Citizen)</td>
+                <td class="amount">Rs 3,00,000</td>
+                <td class="amount">Rs 3,00,000</td>
+            </tr>
+            <tr>
+                <td>LTCG Tax on Property</td>
+                <td>20% with indexation OR 12.5% without</td>
+                <td>20% with indexation OR 12.5% without</td>
+            </tr>
+            <tr>
+                <td>Standard Deduction</td>
+                <td>Not Available</td>
+                <td class="amount">Rs 75,000</td>
+            </tr>
+            <tr>
+                <td>Section 80C Deduction</td>
+                <td class="amount">Up to Rs 1,50,000</td>
+                <td>Not Available</td>
+            </tr>
+            <tr>
+                <td>Section 80D Deduction</td>
+                <td class="amount">Up to Rs 50,000 (Senior Citizen)</td>
+                <td>Not Available</td>
+            </tr>
+            <tr class="highlight">
+                <td><strong>Tax on Your Capital Gains</strong></td>
+                <td class="amount"><strong>Rs 16,12,173 (Same)</strong></td>
+                <td class="amount"><strong>Rs 16,12,173 (Same)</strong></td>
+            </tr>
+        </table>
+        <p class="note"><em>Note: For capital gains on property, both regimes have the same tax treatment. Choose regime based on your other income and deductions.</em></p>
+
+        <h2>💡 TAX SAVING STRATEGIES & RECOMMENDATIONS</h2>
+
+        <h3>Strategy 1: Section 54 - Purchase/Construct Residential Property</h3>
+        <table>
+            <tr>
+                <th style="width: 40%;">Particulars</th>
+                <th style="width: 60%;">Details</th>
+            </tr>
+            <tr>
+                <td>Section</td>
+                <td>Section 54 of Income Tax Act, 1961</td>
+            </tr>
+            <tr>
+                <td>Exemption Type</td>
+                <td>100% Capital Gains Exemption on Amount Invested</td>
+            </tr>
+            <tr>
+                <td>Investment Options</td>
+                <td>• Purchase: 1 year before OR 2 years after sale<br>
+                    • Construction: Within 3 years from sale date</td>
+            </tr>
+            <tr>
+                <td>Timeline for Purchase</td>
+                <td>By February 2027</td>
+            </tr>
+            <tr>
+                <td>Timeline for Construction</td>
+                <td>By February 2028</td>
+            </tr>
+            <tr>
+                <td>Number of Properties</td>
+                <td>Maximum 2 properties (once in lifetime) as LTCG is below Rs 2 Crores</td>
+            </tr>
+            <tr>
+                <td>Holding Requirement</td>
+                <td>Must hold new property for minimum 3 years</td>
+            </tr>
+            <tr class="highlight">
+                <td><strong>Your Capital Gains</strong></td>
+                <td class="amount"><strong>Rs 77,50,831</strong></td>
+            </tr>
+            <tr class="recommended">
+                <td><strong>Maximum Tax Saving Potential</strong></td>
+                <td class="amount"><strong>Rs 15,50,166 (if entire amount invested)</strong></td>
+            </tr>
+        </table>
+
+        <h3>Strategy 2: Section 54EC - Invest in Specified Bonds</h3>
+        <table>
+            <tr>
+                <th style="width: 40%;">Particulars</th>
+                <th style="width: 60%;">Details</th>
+            </tr>
+            <tr>
+                <td>Section</td>
+                <td>Section 54EC of Income Tax Act, 1961</td>
+            </tr>
+            <tr>
+                <td>Eligible Bonds</td>
+                <td>• National Highway Authority of India (NHAI)<br>
+                    • Rural Electrification Corporation (REC)<br>
+                    • Indian Railway Finance Corporation (IRFC)<br>
+                    • Power Finance Corporation (PFC)</td>
+            </tr>
+            <tr>
+                <td>Maximum Investment Limit</td>
+                <td class="amount">Rs 50,00,000 per Financial Year</td>
+            </tr>
+            <tr>
+                <td>Investment Timeline</td>
+                <td>Within 6 months of property sale</td>
+            </tr>
+            <tr>
+                <td>Last Date for Investment</td>
+                <td><strong>August 2025</strong></td>
+            </tr>
+            <tr>
+                <td>Lock-in Period</td>
+                <td>5 Years from date of acquisition</td>
+            </tr>
+            <tr>
+                <td>Interest Rate (Approx)</td>
+                <td>5.25% to 5.75% per annum (taxable)</td>
+            </tr>
+            <tr>
+                <td>Early Withdrawal</td>
+                <td>Not allowed - amount becomes taxable if withdrawn</td>
+            </tr>
+            <tr class="recommended">
+                <td><strong>Tax Saving on Rs 50 Lakhs Investment</strong></td>
+                <td class="amount"><strong>Rs 10,00,000 + Cess Rs 40,000 = Rs 10,40,000</strong></td>
+            </tr>
+        </table>
+
+        <h3>Strategy 3: Capital Gains Account Scheme (CGAS)</h3>
+        <table>
+            <tr>
+                <th style="width: 40%;">Particulars</th>
+                <th style="width: 60%;">Details</th>
+            </tr>
+            <tr>
+                <td>Purpose</td>
+                <td>Park capital gains until utilized for investment</td>
+            </tr>
+            <tr>
+                <td>Where to Open</td>
+                <td>Public Sector Banks or authorized Private Banks</td>
+            </tr>
+            <tr>
+                <td>Deposit Timeline</td>
+                <td>Before filing Income Tax Return</td>
+            </tr>
+            <tr>
+                <td>Utilization Period</td>
+                <td>As per Section 54/54EC timelines</td>
+            </tr>
+            <tr>
+                <td>Interest Earned</td>
+                <td>Taxable as "Income from Other Sources"</td>
+            </tr>
+            <tr>
+                <td>Withdrawal</td>
+                <td>Only for specified purposes (purchase/construction/bonds)</td>
+            </tr>
+            <tr>
+                <td>Benefit</td>
+                <td>Protects your claim even if investment is delayed</td>
+            </tr>
+        </table>
+
+        <h2>🚀 RECOMMENDED COMBINED STRATEGY (MAXIMUM TAX SAVING)</h2>
+        <table>
+            <tr>
+                <th style="width: 50%;">Investment Strategy</th>
+                <th style="width: 25%;" class="amount">Amount to Invest (Rs)</th>
+                <th style="width: 25%;" class="amount">Tax Saved (Rs)</th>
+            </tr>
+            <tr>
+                <td><strong>Capital Gains to be Saved</strong></td>
+                <td class="amount highlight"><strong>77,50,831</strong></td>
+                <td class="amount">-</td>
+            </tr>
+            <tr>
+                <td>Section 54EC - Invest in Bonds (Max Limit)</td>
+                <td class="amount">50,00,000</td>
+                <td class="amount">10,40,000</td>
+            </tr>
+            <tr>
+                <td>Section 54 - Purchase New Residential Property</td>
+                <td class="amount">27,50,831</td>
+                <td class="amount">5,72,173</td>
+            </tr>
+            <tr class="total-row">
+                <td><strong>TOTAL INVESTMENT</strong></td>
+                <td class="amount"><strong>77,50,831</strong></td>
+                <td class="amount"><strong>16,12,173</strong></td>
+            </tr>
+            <tr class="recommended">
+                <td><strong>REMAINING TAX LIABILITY</strong></td>
+                <td class="amount" colspan="2"><strong>NIL (Only Cess: Rs 62,007)*</strong></td>
+            </tr>
+        </table>
+        <p class="note"><em>*Cess may still be applicable. Consult with your tax advisor for exact calculation.</em></p>
+
+        <div class="success-box">
+            <strong>🎯 BEST RECOMMENDATION:</strong><br>
+            1. Invest Rs 50,00,000 in 54EC Bonds within 6 months (by August 2025)<br>
+            2. Invest remaining Rs 27,50,831 (or more) in new residential property within 2 years (by Feb 2027)<br>
+            3. Open CGAS account immediately and deposit the capital gains<br>
+            <strong>Result: Save Rs 16,12,173 in taxes (nearly 100% tax saving possible!)</strong>
+        </div>
+
+        <h2>⏰ CRITICAL TIMELINES</h2>
+        <table>
+            <tr>
+                <th>Action Item</th>
+                <th>Deadline</th>
+                <th>Status</th>
+            </tr>
+            <tr>
+                <td>Section 54EC Bond Investment</td>
+                <td><strong>August 2025</strong> (6 months from sale)</td>
+                <td class="highlight">⚠️ URGENT</td>
+            </tr>
+            <tr>
+                <td>Open CGAS Account & Deposit Capital Gains</td>
+                <td>Before ITR Filing (July 31, 2025)</td>
+                <td class="highlight">⚠️ IMPORTANT</td>
+            </tr>
+            <tr>
+                <td>Purchase New Residential Property (Sec 54)</td>
+                <td>February 2027 (2 years from sale)</td>
+                <td>⏳ Moderate</td>
+            </tr>
+            <tr>
+                <td>Complete Construction (Sec 54)</td>
+                <td>February 2028 (3 years from sale)</td>
+                <td>⏳ Flexible</td>
+            </tr>
+            <tr>
+                <td>File Income Tax Return (ITR-2)</td>
+                <td>July 31, 2025</td>
+                <td class="highlight">⚠️ MANDATORY</td>
+            </tr>
+            <tr>
+                <td>Pay Advance Tax on Capital Gains</td>
+                <td>Quarterly (if not invested before each quarter)</td>
+                <td class="highlight">⚠️ IMPORTANT</td>
+            </tr>
+        </table>
+
+        <h2>📄 DOCUMENTS REQUIRED</h2>
+        <div class="info-box">
+            <strong>For ITR Filing:</strong><br>
+            ✓ Sale Deed with date and consideration (Feb 2025)<br>
+            ✓ Original Purchase Deed (Jan 2003)<br>
+            ✓ Improvement Bills/Receipts (Dec 2020)<br>
+            ✓ PAN Card<br>
+            ✓ Aadhaar Card<br>
+            ✓ Bank Account Details<br><br>
+            
+            <strong>For Section 54 Claim:</strong><br>
+            ✓ New Property Purchase Agreement/Sale Deed<br>
+            ✓ Payment receipts<br>
+            ✓ Construction bills (if construction)<br>
+            ✓ CGAS Account Statement<br><br>
+            
+            <strong>For Section 54EC Claim:</strong><br>
+            ✓ Bond Purchase Certificate<br>
+            ✓ Payment Proof<br>
+            ✓ CGAS Account Statement (if used)
+        </div>
+
+        <h2>⚠️ IMPORTANT NOTES & PRECAUTIONS</h2>
+        <div class="warning-box">
+            <strong>Critical Points to Remember:</strong><br><br>
+            
+            1. <strong>Property Sale Before 23rd July 2024:</strong> Since your property was acquired before this date, you can choose between 12.5% (without indexation) or 20% (with indexation). Properties acquired after this date do not get indexation benefit.<br><br>
+            
+            2. <strong>Section 54 Restrictions:</strong><br>
+            &nbsp;&nbsp; • New property must be residential only (not commercial)<br>
+            &nbsp;&nbsp; • Cannot sell the new property for 3 years (will become taxable)<br>
+            &nbsp;&nbsp; • Can buy maximum 2 properties only once in lifetime under Section 54<br>
+            &nbsp;&nbsp; • Must not own more than one residential property (other than new property) on date of new purchase<br><br>
+            
+            3. <strong>Section 54EC Restrictions:</strong><br>
+            &nbsp;&nbsp; • Cannot withdraw/pledge bonds for 5 years<br>
+            &nbsp;&nbsp; • If withdrawn early, the exemption claimed will be reversed<br>
+            &nbsp;&nbsp; • Interest earned on bonds is fully taxable<br>
+            &nbsp;&nbsp; • Maximum limit is Rs 50 lakhs per financial year<br><br>
+            
+            4. <strong>CGAS Account:</strong><br>
+            &nbsp;&nbsp; • Must be opened before filing ITR<br>
+            &nbsp;&nbsp; • Protects your exemption claim even if investment is delayed<br>
+            &nbsp;&nbsp; • Withdrawal only for specified purposes<br>
+            &nbsp;&nbsp; • Unused amount after timeline becomes taxable<br><br>
+            
+            5. <strong>Advance Tax:</strong> Since capital gains exceed Rs 10,000, you must pay advance tax. Interest under Section 234B and 234C may apply for non-payment.<br><br>
+            
+            6. <strong>Both Regimes Same for LTCG:</strong> The capital gains tax rate is same in both old and new tax regimes. Choose regime based on your total income and other deductions available.<br><br>
+            
+            7. <strong>Senior Citizen Benefits:</strong> Higher basic exemption limit and higher 80D deduction (Rs 50,000) in old regime.
+        </div>
+
+        <h2>📊 SUMMARY - AT A GLANCE</h2>
+        <table>
+            <tr>
+                <th style="width: 50%;">Description</th>
+                <th style="width: 50%;" class="amount">Amount (Rs)</th>
+            </tr>
+            <tr>
+                <td>Sale Price</td>
+                <td class="amount">1,76,00,000</td>
+            </tr>
+            <tr>
+                <td>Capital Gains (with Indexation)</td>
+                <td class="amount">77,50,831</td>
+            </tr>
+            <tr>
+                <td>Tax Liability (without any investment)</td>
+                <td class="amount">16,12,173</td>
+            </tr>
+            <tr class="recommended">
+                <td><strong>Potential Tax Saving (if invested optimally)</strong></td>
+                <td class="amount"><strong>16,12,173 (100%)</strong></td>
+            </tr>
+            <tr>
+                <td>Investment Required in Sec 54EC Bonds</td>
+                <td class="amount">50,00,000</td>
+            </tr>
+            <tr>
+                <td>Investment Required in New Property (Sec 54)</td>
+                <td class="amount">27,50,831</td>
+            </tr>
+            <tr class="total-row">
+                <td><strong>Total Investment for Zero Tax</strong></td>
+                <td class="amount"><strong>77,50,831</strong></td>
+            </tr>
+        </table>
+
+        <div class="button-container">
+            <button onclick="window.print()">🖨️ Print This Report</button>
+            <button onclick="copyToClipboard()">📋 Copy Summary</button>
+        </div>
+
+        <div class="info-box" style="margin-top: 30px;">
+            <strong>📌 Disclaimer:</strong> This calculation is based on current Income Tax provisions as of FY 2024-25. Tax laws are subject to change. Please consult with a qualified Chartered Accountant or Tax Advisor before making any investment decisions. This document is for informational purposes only and does not constitute professional tax advice.
+        </div>
+
+        <div style="text-align: center; margin-top: 30px; padding: 20px; background-color: #f0f0f0; border-radius: 10px;">
+            <p style="font-size: 0.9em; color: #666;">Prepared for: Property Sale at Mandavali, Delhi</p>
+            <p style="font-size: 0.9em; color: #666;">Date of Calculation: December 14, 2025</p>
+            <p style="font-size: 0.9em; color: #666;">FY: 2024-25 | AY: 2025-26</p>
+        </div>
+    </div>
+
+    <script>
+        function copyToClipboard() {
+            const summary = `CAPITAL GAINS TAX SUMMARY
+Sale Price: Rs 1,76,00,000
+Capital Gains (Indexed): Rs 77,50,831
+Tax Liability: Rs 16,12,173
+Potential Saving: Rs 16,12,173 (100%)
+
+RECOMMENDED STRATEGY:
+1. Invest Rs 50,00,000 in 54EC Bonds (by Aug 2025)
+2. Invest Rs 27,50,831 in new property (by Feb 2027)
+Result: ZERO TAX!`;
+            
+            navigator.clipboard.writeText(summary).then(() => {
+                alert('Summary copied to clipboard!');
+            }).catch(err => {
+                alert('Failed to copy: ' + err);
+            });
+        }
+    </script>
+</body>
+</html>

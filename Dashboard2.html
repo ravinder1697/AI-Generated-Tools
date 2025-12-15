@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Venkateshwara Traders - Statutory Audit Dashboard</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); transition: transform 0.2s; }
+        .card:hover { transform: translateY(-2px); }
+        .stat-label { color: #6b7280; font-size: 0.875rem; font-weight: 500; }
+        .stat-value { color: #111827; font-size: 1.5rem; font-weight: 700; margin-top: 0.25rem; }
+        .stat-sub { font-size: 0.75rem; margin-top: 0.25rem; }
+        .text-success { color: #10b981; }
+        .text-danger { color: #ef4444; }
+        .text-warning { color: #f59e0b; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <!-- Header -->
+    <div class="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800"><i class="fas fa-chart-line text-blue-600 mr-2"></i>Audit Dashboard</h1>
+            <p class="text-gray-500 mt-1">Venkateshwara Traders | FY 2020-21 Statutory Audit Review</p>
+        </div>
+        <div class="mt-4 md:mt-0">
+            <span class="bg-red-100 text-red-800 text-xs font-medium px-3 py-1.5 rounded border border-red-200">
+                <i class="fas fa-exclamation-triangle mr-1"></i> Material Misstatements Found
+            </span>
+        </div>
+    </div>
+
+    <!-- KPI Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        
+        <!-- Revenue Card -->
+        <div class="card p-6 border-l-4 border-blue-500">
+            <div class="flex justify-between items-center">
+                <div class="stat-label">Total Turnover</div>
+                <div class="p-2 bg-blue-50 rounded-full text-blue-500"><i class="fas fa-indian-rupee-sign"></i></div>
+            </div>
+            <div class="stat-value">₹1.61 Cr</div>
+            <div class="stat-sub text-gray-500">Total Sales Accounts</div>
+        </div>
+
+        <!-- Purchase Card -->
+        <div class="card p-6 border-l-4 border-indigo-500">
+            <div class="flex justify-between items-center">
+                <div class="stat-label">Total Purchases</div>
+                <div class="p-2 bg-indigo-50 rounded-full text-indigo-500"><i class="fas fa-shopping-cart"></i></div>
+            </div>
+            <div class="stat-value">₹1.70 Cr</div>
+            <div class="stat-sub text-red-500"><i class="fas fa-arrow-up"></i> Exceeds Sales by ₹9 Lakhs</div>
+        </div>
+
+        <!-- Reported Loss Card -->
+        <div class="card p-6 border-l-4 border-red-500">
+            <div class="flex justify-between items-center">
+                <div class="stat-label">Reported Net Loss (Book)</div>
+                <div class="p-2 bg-red-50 rounded-full text-red-500"><i class="fas fa-file-invoice-dollar"></i></div>
+            </div>
+            <div class="stat-value text-red-600">₹(98.01) L</div>
+            <div class="stat-sub text-gray-500">As per uploaded P&L</div>
+        </div>
+
+        <!-- Audited Loss Card -->
+        <div class="card p-6 border-l-4 border-emerald-500 relative overflow-hidden">
+            <div class="absolute top-0 right-0 bg-emerald-500 text-white text-[10px] px-2 py-1 rounded-bl">AUDIT VIEW</div>
+            <div class="flex justify-between items-center">
+                <div class="stat-label">Restated Net Loss</div>
+                <div class="p-2 bg-emerald-50 rounded-full text-emerald-500"><i class="fas fa-calculator"></i></div>
+            </div>
+            <div class="stat-value text-emerald-600">₹(16.34) L</div>
+            <div class="stat-sub text-gray-500">After correcting Closing Stock Error</div>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        
+        <!-- Chart: P&L Correction Analysis -->
+        <div class="card p-6 lg:col-span-2">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">
+                <i class="fas fa-balance-scale text-purple-600 mr-2"></i>
+                Impact of Accounting Error on Profitability
+            </h3>
+            <div class="h-64">
+                <canvas id="plComparisonChart"></canvas>
+            </div>
+            <p class="text-sm text-gray-500 mt-4 bg-yellow-50 p-3 rounded border border-yellow-200">
+                <i class="fas fa-lightbulb text-yellow-500 mr-2"></i>
+                <strong>Observation:</strong> The reported "Gross Loss" of ₹80.79L was caused by debiting Closing Stock (₹40.83L) instead of crediting it. Correcting this shifts the position to a Gross Profit of ₹0.88L.
+            </p>
+        </div>
+
+        <!-- Audit Findings List -->
+        <div class="card p-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">
+                <i class="fas fa-clipboard-check text-red-500 mr-2"></i>
+                Critical Audit Observations
+            </h3>
+            <div class="space-y-4">
+                <div class="flex items-start">
+                    <div class="mt-1 mr-3"><i class="fas fa-exclamation-circle text-red-500"></i></div>
+                    <div>
+                        <h4 class="text-sm font-bold text-gray-800">Unreconciled Suspense A/c</h4>
+                        <p class="text-xs text-gray-500">Liability side shows ₹9.22 Lakhs in Suspense. Indicates unexplained opening balance differences.</p>
+                    </div>
+                </div>
+                <hr class="border-gray-100">
+                <div class="flex items-start">
+                    <div class="mt-1 mr-3"><i class="fas fa-tag text-orange-500"></i></div>
+                    <div>
+                        <h4 class="text-sm font-bold text-gray-800">Negative Margins</h4>
+                        <p class="text-xs text-gray-500">Items like Organic Honey and Cashews are consistently sold significantly below purchase cost.</p>
+                    </div>
+                </div>
+                <hr class="border-gray-100">
+                <div class="flex items-start">
+                    <div class="mt-1 mr-3"><i class="fas fa-layer-group text-blue-500"></i></div>
+                    <div>
+                        <h4 class="text-sm font-bold text-gray-800">Closing Stock Misstatement</h4>
+                        <p class="text-xs text-gray-500">Stock of ₹40.83L recorded as expense (Debit) rather than asset (Credit). High Materiality.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Secondary Charts Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- Chart: Liabilities Breakdown -->
+        <div class="card p-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">Sources of Funds (Liabilities)</h3>
+            <div class="h-64 flex justify-center">
+                <canvas id="liabilitiesChart"></canvas>
+            </div>
+            <div class="text-center mt-2 text-xs text-gray-400">Heavily reliant on Owner's Capital</div>
+        </div>
+
+        <!-- Chart: Asset Allocation -->
+        <div class="card p-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">Deployment of Funds (Assets)</h3>
+            <div class="h-64 flex justify-center">
+                <canvas id="assetsChart"></canvas>
+            </div>
+            <div class="text-center mt-2 text-xs text-gray-400">Fixed Assets dominate the balance sheet</div>
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="mt-8 text-center text-gray-400 text-xs">
+        <p>Generated by Gemini AI Statutory Auditor Module. Data based on uploaded FY20-21 documents.</p>
+    </div>
+
+    <script>
+        // --- Data Configuration ---
+        const reportedGross = -80.79; // Reported Gross Loss (Negative)
+        const auditedGross = 0.88;    // Corrected Gross Profit (Positive)
+        const reportedNet = -98.01;   // Reported Net Loss
+        const auditedNet = -16.34;    // Corrected Net Loss
+
+        // --- Chart 1: P&L Comparison ---
+        const ctxPL = document.getElementById('plComparisonChart').getContext('2d');
+        new Chart(ctxPL, {
+            type: 'bar',
+            data: {
+                labels: ['Gross Profit/Loss', 'Net Profit/Loss'],
+                datasets: [
+                    {
+                        label: 'Reported (Per Books)',
+                        data: [reportedGross, reportedNet],
+                        backgroundColor: '#ef4444',
+                        borderColor: '#b91c1c',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Audited (Recalculated)',
+                        data: [auditedGross, auditedNet],
+                        backgroundColor: '#10b981',
+                        borderColor: '#047857',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top' },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ₹' + context.raw + ' Lakhs';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Amount (₹ Lakhs)' },
+                        grid: { color: '#f3f4f6' }
+                    }
+                }
+            }
+        });
+
+        // --- Chart 2: Liabilities Structure ---
+        const ctxLiab = document.getElementById('liabilitiesChart').getContext('2d');
+        new Chart(ctxLiab, {
+            type: 'doughnut',
+            data: {
+                labels: ['Capital A/c', 'Loans', 'Suspense A/c', 'Current Liab.'],
+                datasets: [{
+                    data: [595.00, 58.69, 9.22, 4.09], // In Lakhs
+                    backgroundColor: ['#3b82f6', '#f59e0b', '#ef4444', '#6366f1'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'right' }
+                }
+            }
+        });
+
+        // --- Chart 3: Assets Structure ---
+        const ctxAssets = document.getElementById('assetsChart').getContext('2d');
+        new Chart(ctxAssets, {
+            type: 'pie',
+            data: {
+                labels: ['Fixed Assets', 'Current Assets', 'Accumulated Losses (Book)'],
+                datasets: [{
+                    data: [571.17, 2.67, 98.01], // In Lakhs
+                    backgroundColor: ['#10b981', '#06b6d4', '#cbd5e1'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'right' }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

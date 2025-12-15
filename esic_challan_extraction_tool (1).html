@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>ESIC Challan Extractor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      margin: 0;
+      padding: 0;
+      color: #fff;
+    }
+    header {
+      padding: 20px;
+      text-align: center;
+      font-size: 26px;
+      font-weight: 600;
+      background: rgba(0,0,0,0.25);
+    }
+    .container {
+      padding: 20px;
+    }
+    .card {
+      background: #ffffff;
+      color: #333;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+    }
+    .upload-box {
+      border: 2px dashed #4a90e2;
+      padding: 30px;
+      text-align: center;
+      border-radius: 10px;
+      background: #f8fbff;
+    }
+    input[type=file] {
+      margin-top: 10px;
+    }
+    button {
+      padding: 10px 16px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      background: #4a90e2;
+      color: #fff;
+      font-weight: 600;
+      margin-right: 8px;
+    }
+    button.danger { background: #d9534f; }
+    button.success { background: #28a745; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    table th, table td {
+      border: 1px solid #ccc;
+      padding: 6px 8px;
+      text-align: left;
+    }
+    table th {
+      background: #f0f3f6;
+    }
+    tr.duplicate {
+      background: #ffe1e1;
+    }
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      text-align: center;
+    }
+    .summary div {
+      background: #f7f9fc;
+      color: #333;
+      padding: 15px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+<header>ESIC Challan Extraction & Audit Tool</header>
+
+<div class="container">
+
+  <!-- Upload -->
+  <div class="card upload-box">
+    <h3>Bulk Upload ESIC Challans (PDF / JPG)</h3>
+    <input type="file" id="fileInput" multiple accept=".pdf,.jpg,.jpeg,.png" />
+    <br/><br/>
+    <button onclick="processFiles()">Extract Data</button>
+  </div>
+
+  <!-- Summary -->
+  <div class="card">
+    <h3>Dashboard Summary</h3>
+    <div class="summary">
+      <div>Total Challans<br><span id="totalCount">0</span></div>
+      <div>Duplicate Count<br><span id="dupCount">0</span></div>
+      <div>Total Amount (₹)<br><span id="totalAmount">0</span></div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="card">
+    <button class="danger" onclick="removeDuplicates()">Remove Duplicates</button>
+    <button class="success" onclick="exportExcel()">Export Excel</button>
+    <button class="success" onclick="exportZip()">Export ZIP (Duplicates Separate)</button>
+  </div>
+
+  <!-- Table -->
+  <div class="card">
+    <h3>Extracted Challan Data</h3>
+    <table id="dataTable">
+      <thead>
+        <tr>
+          <th>Client</th>
+          <th>Employer Code</th>
+          <th>Challan Period</th>
+          <th>Challan No</th>
+          <th>Submitted Date</th>
+          <th>Amount Paid</th>
+          <th>Transaction No</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+let challans = [];
+
+const regexMap = {
+  employer: /Employer'?s?\s*Code\s*No\.?\s*:?\s*(\d+)/i,
+  period: /Challan\s*Period\s*:?\s*([A-Za-z0-9\-\/]+)/i,
+  challanNo: /Challan\s*(No|Number)\s*:?\s*(\d+)/i,
+  date: /(Submitted|Payment)\s*Date\s*:?\s*([0-9\-/]+)/i,
+  amount: /(Amount\s*Paid|Total\s*Amount)\s*:?\s*₹?\s*([0-9,]+)/i,
+  txn: /(Transaction|Reference)\s*(No|Number)\s*:?\s*([A-Za-z0-9]+)/i
+};
+
+async function processFiles() {
+  challans = [];
+  const files = document.getElementById('fileInput').files;
+  for (let file of files) {
+    let text = '';
+    if (file.type.includes('pdf')) {
+      const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file)).promise;
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        text += content.items.map(it => it.str).join(' ');
+      }
+    } else {
+      text = file.name; // image OCR placeholder
+    }
+    extractData(text);
+  }
+  markDuplicates();
+  renderTable();
+}
+
+function extractData(text) {
+  const data = {
+    client: 'Default Client',
+    employer: match(regexMap.employer, text),
+    period: match(regexMap.period, text),
+    challanNo: match(regexMap.challanNo, text),
+    date: match(regexMap.date, text),
+    amount: parseFloat(match(regexMap.amount, text).replace(/,/g,'')) || 0,
+    txn: match(regexMap.txn, text),
+    duplicate: false
+  };
+  challans.push(data);
+}
+
+function match(regex, text) {
+  const m = text.match(regex);
+  return m ? m[m.length - 1] : '';
+}
+
+function markDuplicates() {
+  const map = {};
+  challans.forEach(c => {
+    const key = c.challanNo + '|' + c.txn;
+    if (map[key]) c.duplicate = true;
+    else map[key] = true;
+  });
+}
+
+function renderTable() {
+  const tbody = document.querySelector('#dataTable tbody');
+  tbody.innerHTML = '';
+  let total = 0, dup = 0;
+  challans.forEach(c => {
+    total += c.amount;
+    if (c.duplicate) dup++;
+    const tr = document.createElement('tr');
+    if (c.duplicate) tr.classList.add('duplicate');
+    tr.innerHTML = `
+      <td>${c.client}</td>
+      <td>${c.employer}</td>
+      <td>${c.period}</td>
+      <td>${c.challanNo}</td>
+      <td>${c.date}</td>
+      <td>${c.amount.toFixed(2)}</td>
+      <td>${c.txn}</td>
+      <td>${c.duplicate ? 'Duplicate' : 'OK'}</td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('totalCount').innerText = challans.length;
+  document.getElementById('dupCount').innerText = dup;
+  document.getElementById('totalAmount').innerText = total.toFixed(2);
+}
+
+function removeDuplicates() {
+  challans = challans.filter(c => !c.duplicate);
+  renderTable();
+}
+
+function exportExcel() {
+  const ws = XLSX.utils.json_to_sheet(challans);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'ESIC Challans');
+  XLSX.writeFile(wb, 'ESIC_Challans.xlsx');
+}
+
+function exportZip() {
+  const zip = new JSZip();
+  const clean = challans.filter(c => !c.duplicate);
+  const dup = challans.filter(c => c.duplicate);
+  zip.file('Clean/clean.json', JSON.stringify(clean, null, 2));
+  zip.file('Duplicates/duplicates.json', JSON.stringify(dup, null, 2));
+  zip.generateAsync({ type: 'blob' }).then(b => saveAs(b, 'ESIC_Output.zip'));
+}
+</script>
+
+</body>
+</html>

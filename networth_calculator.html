@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Networth Certificate Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+        }
+
+        .form-section h2 {
+            color: #667eea;
+            font-size: 20px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .amount-input {
+            position: relative;
+        }
+
+        .amount-input::before {
+            content: '₹';
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-weight: 600;
+            color: #666;
+        }
+
+        .amount-input input {
+            padding-left: 30px;
+        }
+
+        .calculate-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+
+        .calculate-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .certificate {
+            display: none;
+            margin-top: 40px;
+            padding: 40px;
+            border: 3px double #333;
+            background: white;
+            font-family: 'Times New Roman', serif;
+        }
+
+        .certificate.show {
+            display: block;
+        }
+
+        .cert-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .cert-title {
+            font-size: 24px;
+            font-weight: bold;
+            text-decoration: underline;
+            margin-bottom: 20px;
+        }
+
+        .cert-body {
+            line-height: 1.8;
+            text-align: justify;
+        }
+
+        .cert-table {
+            width: 100%;
+            margin: 20px 0;
+            border-collapse: collapse;
+        }
+
+        .cert-table th, .cert-table td {
+            border: 1px solid #333;
+            padding: 10px;
+            text-align: left;
+        }
+
+        .cert-table th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+        }
+
+        .cert-table .amount {
+            text-align: right;
+        }
+
+        .cert-table .total {
+            font-weight: bold;
+            background-color: #f0f0f0;
+        }
+
+        .cert-footer {
+            margin-top: 30px;
+            line-height: 1.8;
+        }
+
+        .action-buttons {
+            margin-top: 30px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-print {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-download {
+            background: #2196F3;
+            color: white;
+        }
+
+        .btn-reset {
+            background: #ff5722;
+            color: white;
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+
+            .container {
+                box-shadow: none;
+                max-width: 100%;
+            }
+
+            .header, .content > *:not(.certificate), .action-buttons {
+                display: none !important;
+            }
+
+            .certificate {
+                display: block !important;
+                border: 3px double #333;
+                padding: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Networth Certificate Generator</h1>
+            <p>Calculate and generate professional networth certificates</p>
+        </div>
+
+        <div class="content">
+            <form id="networthForm">
+                <div class="form-section">
+                    <h2>Company Information</h2>
+                    <div class="form-group">
+                        <label for="companyName">Company Name *</label>
+                        <input type="text" id="companyName" required placeholder="Enter company name">
+                    </div>
+                    <div class="form-group">
+                        <label for="cin">Corporate Identification Number (CIN) *</label>
+                        <input type="text" id="cin" required placeholder="Enter CIN number">
+                    </div>
+                    <div class="form-group">
+                        <label for="address">Registered Office Address *</label>
+                        <textarea id="address" required placeholder="Enter complete registered address"></textarea>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h2>Financial Details (as on 31/03/2024)</h2>
+                    <div class="form-group">
+                        <label for="paidUpCapital">Paid-up Capital *</label>
+                        <div class="amount-input">
+                            <input type="number" id="paidUpCapital" required placeholder="0.00" step="0.01" min="0">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="reserveSurplus">Reserve & Surplus</label>
+                        <div class="amount-input">
+                            <input type="number" id="reserveSurplus" placeholder="0.00" step="0.01" min="0" value="0">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="accumulatedLosses">Accumulated Losses (if any)</label>
+                        <div class="amount-input">
+                            <input type="number" id="accumulatedLosses" placeholder="0.00" step="0.01" min="0" value="0">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="miscExpenditure">Miscellaneous Expenditure</label>
+                        <div class="amount-input">
+                            <input type="number" id="miscExpenditure" placeholder="0.00" step="0.01" min="0" value="0">
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="calculate-btn">Generate Certificate</button>
+            </form>
+
+            <div id="certificate" class="certificate">
+                <div class="cert-header">
+                    <div style="font-style: italic; margin-bottom: 20px;">(On chartered accountant / company Secretary letter head)</div>
+                    <div class="cert-title">Networth Certificate</div>
+                </div>
+
+                <div class="cert-body">
+                    <p>This is to certify that Networth of <strong><span id="certCompanyName"></span></strong> having Corporate Identification No <strong><span id="certCIN"></span></strong> and having its registered office address AT <strong><span id="certAddress"></span></strong> has been calculated as under:</p>
+
+                    <p style="margin-top: 20px;"><strong>Networth as on: 31/03/2024</strong></p>
+
+                    <table class="cert-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 70%;">Particulars</th>
+                                <th style="width: 30%;">Amount (in Rs.)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Paid up Capital</td>
+                                <td class="amount" id="certPaidUp"></td>
+                            </tr>
+                            <tr>
+                                <td>Add: Reserve & Surplus</td>
+                                <td class="amount" id="certReserve"></td>
+                            </tr>
+                            <tr>
+                                <td>Less: Accumulated losses, if any</td>
+                                <td class="amount" id="certLosses"></td>
+                            </tr>
+                            <tr>
+                                <td>Less: Miscellaneous Expenditure</td>
+                                <td class="amount" id="certMisc"></td>
+                            </tr>
+                            <tr class="total">
+                                <td><strong>Total Networth</strong></td>
+                                <td class="amount"><strong id="certNetworth"></strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <p style="font-size: 12px; font-style: italic;">* Networth to be calculated as per latest audited financial statement.</p>
+                </div>
+
+                <div class="cert-footer">
+                    <p>This is to certify that the above mentioned information is true to the best of my knowledge and belief, according to the books and documents produced before me for verification.</p>
+                </div>
+            </div>
+
+            <div class="action-buttons" id="actionButtons" style="display: none;">
+                <button class="btn btn-print" onclick="window.print()">Print Certificate</button>
+                <button class="btn btn-download" onclick="downloadCertificate()">Download as HTML</button>
+                <button class="btn btn-reset" onclick="resetForm()">Generate New Certificate</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function formatCurrency(amount) {
+            return parseFloat(amount).toLocaleString('en-IN', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        document.getElementById('networthForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const companyName = document.getElementById('companyName').value;
+            const cin = document.getElementById('cin').value;
+            const address = document.getElementById('address').value;
+            const paidUpCapital = parseFloat(document.getElementById('paidUpCapital').value) || 0;
+            const reserveSurplus = parseFloat(document.getElementById('reserveSurplus').value) || 0;
+            const accumulatedLosses = parseFloat(document.getElementById('accumulatedLosses').value) || 0;
+            const miscExpenditure = parseFloat(document.getElementById('miscExpenditure').value) || 0;
+
+            const networth = paidUpCapital + reserveSurplus - accumulatedLosses - miscExpenditure;
+
+            document.getElementById('certCompanyName').textContent = companyName;
+            document.getElementById('certCIN').textContent = cin;
+            document.getElementById('certAddress').textContent = address;
+            document.getElementById('certPaidUp').textContent = formatCurrency(paidUpCapital);
+            document.getElementById('certReserve').textContent = formatCurrency(reserveSurplus);
+            document.getElementById('certLosses').textContent = formatCurrency(accumulatedLosses);
+            document.getElementById('certMisc').textContent = formatCurrency(miscExpenditure);
+            document.getElementById('certNetworth').textContent = formatCurrency(networth);
+
+            document.getElementById('certificate').classList.add('show');
+            document.getElementById('actionButtons').style.display = 'flex';
+
+            document.getElementById('certificate').scrollIntoView({ behavior: 'smooth' });
+        });
+
+        function downloadCertificate() {
+            const certificate = document.getElementById('certificate').cloneNode(true);
+            const html = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Networth Certificate</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            padding: 40px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .certificate {
+            padding: 40px;
+            border: 3px double #333;
+        }
+        .cert-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .cert-title {
+            font-size: 24px;
+            font-weight: bold;
+            text-decoration: underline;
+            margin-bottom: 20px;
+        }
+        .cert-body {
+            line-height: 1.8;
+            text-align: justify;
+        }
+        .cert-table {
+            width: 100%;
+            margin: 20px 0;
+            border-collapse: collapse;
+        }
+        .cert-table th, .cert-table td {
+            border: 1px solid #333;
+            padding: 10px;
+            text-align: left;
+        }
+        .cert-table th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+        }
+        .cert-table .amount {
+            text-align: right;
+        }
+        .cert-table .total {
+            font-weight: bold;
+            background-color: #f0f0f0;
+        }
+        .cert-footer {
+            margin-top: 30px;
+            line-height: 1.8;
+        }
+    </style>
+</head>
+<body>
+    ${certificate.outerHTML}
+</body>
+</html>`;
+
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Networth_Certificate.html';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function resetForm() {
+            document.getElementById('networthForm').reset();
+            document.getElementById('certificate').classList.remove('show');
+            document.getElementById('actionButtons').style.display = 'none';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>

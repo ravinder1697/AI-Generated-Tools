@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Udyam Certificate Data Extractor (Client-Side)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script>
+        // Set the worker source for PDF.js
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    </script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
+        .container { max-width: 1200px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        input[type="file"] { padding: 10px; border: 1px solid #ccc; border-radius: 4px; display: block; width: 100%; margin-bottom: 20px; }
+        button { padding: 10px 15px; margin-right: 10px; background-color: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.3s; }
+        button:hover { background-color: #2980b9; }
+        button:disabled { background-color: #bdc3c7; cursor: not-allowed; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #ecf0f1; }
+        .duplicate-row td { background-color: #fce4e4; border-left: 5px solid #e74c3c; }
+        #log { margin-top: 20px; padding: 10px; border: 1px solid #ccc; background-color: #f9f9f9; max-height: 100px; overflow-y: scroll; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📄 Udyam Certificate Data Extractor</h1>
+    <p>Upload Udyam Certificates (PDFs) to extract key data.</p>
+    <input type="file" id="pdfFileInput" multiple accept=".pdf">
+
+    <div id="controls">
+        <button onclick="processFiles()">Process Files</button>
+        <button onclick="removeDuplicates()" id="removeDuplicatesBtn" disabled>Remove Duplicates</button>
+        <button onclick="exportToExcel()" id="exportExcelBtn" disabled>Export to Excel (.xlsx)</button>
+        <button onclick="exportToZip()" id="exportZipBtn" disabled>Export to ZIP</button>
+    </div>
+
+    <div id="log">Status Log: Ready to upload files.</div>
+
+    <hr>
+
+    <h2>Extracted Data Table</h2>
+    <table id="dataTable">
+        <thead>
+            <tr>
+                <th>Udyam No.</th>
+                <th>Enterprise Name</th>
+                <th>PAN</th>
+                <th>GSTIN</th>
+                <th>Mobile</th>
+                <th>Email</th>
+                <th>File Name</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            </tbody>
+    </table>
+</div>
+
+<script>
+    let extractedData = []; // Array to hold all extracted objects
+    const fileBlobs = new Map(); // Map to store file content (Blob) for ZIP export
+
+    // --- REGULAR EXPRESSIONS for Udyam Certificate Data ---
+    // These are tailored for common Udyam certificate layouts.
+    // Adjust as necessary for different certificate formats.
+    const regexes = {
+        // Udyam-RJ-00-0000000 format. UAN numbers are 16 digits.
+        udyamNumber: /UDYAM-\w{2}-[\d]{2}-[\d]{7}/i, 
+        // Enterprise Name is often listed after "Name of Enterprise" or similar phrase
+        name: /Name of Enterprise:\s*([^\n]+)/i, 
+        // PAN is 10 digits/letters (AADHAAR may also appear, but PAN is priority)
+        pan: /[A-Z]{5}[0-9]{4}[A-Z]{1}/g, 
+        // GSTIN is 15 alphanumeric characters
+        gstin: /\d{2}[A-Z]{5}\d{4}[A-Z]{1}\d[Z]{1}[A-Z\d]{1}/g,
+        // Mobile number pattern (standard 10 digits)
+        mobile: /Mobile No\.:\s*(\d{10})/i, 
+        // Simple email pattern
+        email: /E-mail:\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i
+    };
+
+    /**
+     * Reads and extracts text from a single PDF File object.
+     * @param {File} file - The PDF file object.
+     * @returns {Promise<string>} The extracted text content.
+     */
+    async function extractTextFromPDF(file) {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        let fullText = '';
+        
+        // Loop through all pages and extract text
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            // Join all text items, using a newline to separate potential lines
+            fullText += textContent.items.map(item => item.str).join('\n') + '\n';
+        }
+
+        return fullText;
+    }
+
+    /**
+     * Parses the text content using Regex to extract data fields.
+     * @param {string} text - The raw text extracted from the PDF.
+     * @param {string} fileName - The name of the original file.
+     * @returns {object} An object containing the extracted data.
+     */
+    function parseData(text, fileName) {
+        const data = {
+            udyamNumber: '',
+            name: '',
+            pan: '',
+            gstin: '',
+            mobile: '',
+            email: '',
+            fileName: fileName,
+            isDuplicate: false,
+            originalFile: null // Will be set later
+        };
+
+        // Extraction Logic
+        data.udyamNumber = text.match(regexes.udyamNumber)?.[0] || 'N/A';
+        
+        // Name is a multi-step extraction for better accuracy
+        const nameMatch = text.match(regexes.name);
+        if (nameMatch && nameMatch[1]) {
+            // Clean up the name (remove leading/trailing whitespace, newlines, etc.)
+            data.name = nameMatch[1].trim().replace(/\s\s+/g, ' '); 
+        } else {
+            data.name = 'N/A';
+        }
+
+        // PAN and GSTIN: Use global regex to find all matches, then pick the first one
+        data.pan = text.match(regexes.pan)?.[0] || 'N/A';
+        data.gstin = text.match(regexes.gstin)?.[0] || 'N/A';
+        
+        data.mobile = text.match(regexes.mobile)?.[1] || 'N/A';
+        data.email = text.match(regexes.email)?.[1] || 'N/A';
+
+        // Clean up the Udyam number (ensure it's uppercase and trimmed)
+        data.udyamNumber = data.udyamNumber.toUpperCase().trim();
+        
+        return data;
+    }
+
+    /**
+     * Main function to handle file upload and processing.
+     */
+    async function processFiles() {
+        const fileInput = document.getElementById('pdfFileInput');
+        const files = Array.from(fileInput.files);
+        const log = document.getElementById('log');
+
+        if (files.length === 0) {
+            log.innerHTML = 'Status Log: **Please select one or more PDF files.**';
+            return;
+        }
+
+        log.innerHTML = `Status Log: **Processing ${files.length} files...**`;
+        document.getElementById('controls').querySelectorAll('button').forEach(btn => btn.disabled = true);
+        extractedData = []; // Clear previous data
+        fileBlobs.clear(); // Clear previous file contents
+
+        for (const file of files) {
+            try {
+                // 1. Store the file content (Blob)
+                fileBlobs.set(file.name, new Blob([file]));
+                
+                // 2. Extract text and parse data
+                const text = await extractTextFromPDF(file);
+                const data = parseData(text, file.name);
+                data.originalFile = file; // Store the original file object for ZIP export
+                extractedData.push(data);
+                log.innerHTML = `Status Log: Processed **${file.name}** successfully.`;
+            } catch (error) {
+                log.innerHTML += `<br>Status Log: ERROR processing **${file.name}**: ${error.message}`;
+            }
+        }
+
+        updateDataAndTable();
+        log.innerHTML = `Status Log: **Finished processing ${files.length} files.**`;
+        document.getElementById('controls').querySelectorAll('button').forEach(btn => btn.disabled = false);
+    }
+
+    /**
+     * Updates the data array with duplicate flags and re-renders the table.
+     */
+    function updateDataAndTable() {
+        const udyamNumbers = extractedData.map(d => d.udyamNumber).filter(u => u !== 'N/A');
+        const seenUdyam = new Set();
+        const duplicates = new Set();
+
+        // 1. Identify duplicates
+        udyamNumbers.forEach(udyam => {
+            if (seenUdyam.has(udyam)) {
+                duplicates.add(udyam);
+            }
+            seenUdyam.add(udyam);
+        });
+
+        // 2. Mark data objects and re-render
+        extractedData.forEach(data => {
+            data.isDuplicate = duplicates.has(data.udyamNumber);
+        });
+        
+        renderTable();
+        
+        // 3. Update control buttons
+        const hasDuplicates = extractedData.some(d => d.isDuplicate);
+        document.getElementById('removeDuplicatesBtn').disabled = !hasDuplicates;
+        document.getElementById('exportExcelBtn').disabled = extractedData.length === 0;
+        document.getElementById('exportZipBtn').disabled = extractedData.length === 0;
+    }
+
+    /**
+     * Renders the data array into the HTML table.
+     */
+    function renderTable() {
+        const tbody = document.getElementById('dataTable').querySelector('tbody');
+        tbody.innerHTML = ''; // Clear existing rows
+
+        extractedData.forEach(data => {
+            const row = tbody.insertRow();
+            if (data.isDuplicate) {
+                row.classList.add('duplicate-row');
+            }
+
+            // Insert cells in the correct order
+            row.insertCell().textContent = data.udyamNumber;
+            row.insertCell().textContent = data.name;
+            row.insertCell().textContent = data.pan;
+            row.insertCell().textContent = data.gstin;
+            row.insertCell().textContent = data.mobile;
+            row.insertCell().textContent = data.email;
+            row.insertCell().textContent = data.fileName;
+            row.insertCell().textContent = data.isDuplicate ? 'DUPLICATE' : 'UNIQUE';
+        });
+    }
+
+    /**
+     * Removes all rows marked as duplicates from the extractedData array.
+     * Retains only the FIRST occurrence of a Udyam number.
+     */
+    function removeDuplicates() {
+        const uniqueUdyams = new Set();
+        const uniqueData = [];
+        
+        // Filter the data, keeping only the first instance of a Udyam number
+        extractedData.forEach(data => {
+            if (data.udyamNumber === 'N/A' || !uniqueUdyams.has(data.udyamNumber)) {
+                uniqueData.push(data);
+                uniqueUdyams.add(data.udyamNumber);
+            }
+        });
+
+        extractedData = uniqueData;
+        document.getElementById('log').innerHTML = `Status Log: **Duplicates removed.** Total unique entries: ${extractedData.length}`;
+        updateDataAndTable(); // Re-render table and update flags
+    }
+
+    /**
+     * Exports the table data to an Excel (.xlsx) file.
+     */
+    function exportToExcel() {
+        const header = ["Udyam Number", "Enterprise Name", "PAN", "GSTIN", "Mobile", "Email", "Original File Name", "Status"];
+        
+        // Map the extracted data to an array of arrays for the worksheet
+        const dataForSheet = extractedData.map(d => [
+            d.udyamNumber,
+            d.name,
+            d.pan,
+            d.gstin,
+            d.mobile,
+            d.email,
+            d.fileName,
+            d.isDuplicate ? 'DUPLICATE' : 'UNIQUE'
+        ]);
+
+        const ws_data = [header].concat(dataForSheet);
+        const ws = XLSX.utils.aoa_to_sheet(ws_data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Udyam_Data");
+        
+        // Generate and download the file
+        XLSX.writeFile(wb, "Udyam_Extracted_Data.xlsx");
+        document.getElementById('log').innerHTML = `Status Log: **Data exported to Excel.**`;
+    }
+
+    /**
+     * Exports the files into an organized ZIP archive.
+     * Unique: Renamed by Enterprise Name.
+     * Duplicate: Placed in a 'Duplicates' folder.
+     */
+    async function exportToZip() {
+        const zip = new JSZip();
+        const duplicatesFolder = zip.folder("Duplicates_Certificates");
+        const uniqueUdyams = new Set();
+
+        for (const data of extractedData) {
+            // Check if the file content is actually stored (it should be)
+            if (!data.originalFile) continue; 
+
+            // Clean up the enterprise name for use as a filename
+            let enterpriseName = data.name.replace(/[^a-z0-9]/gi, '_').substring(0, 50);
+            if (enterpriseName === 'N_A') {
+                enterpriseName = data.fileName.replace(/\.pdf$/i, '_NoName');
+            }
+            const newFileName = `${enterpriseName}_${data.udyamNumber}.pdf`;
+            
+            // Get the Blob content
+            const fileBlob = fileBlobs.get(data.fileName);
+            if (!fileBlob) continue;
+            
+            // Determine if it's a unique or duplicate based on logic:
+            // 1. If it was marked as duplicate in the table (meaning another file with the same Udyam number appeared)
+            // 2. We use uniqueUdyams Set to ensure only the first one is marked unique, subsequent ones are duplicates.
+            let isDuplicate = data.isDuplicate;
+            if (data.udyamNumber !== 'N/A' && !uniqueUdyams.has(data.udyamNumber)) {
+                uniqueUdyams.add(data.udyamNumber);
+                isDuplicate = false; // Force the first instance to be unique in the ZIP
+            } else if (data.udyamNumber !== 'N/A' && uniqueUdyams.has(data.udyamNumber)) {
+                isDuplicate = true; // All subsequent instances are duplicates
+            }
+            
+            if (isDuplicate) {
+                // Place in Duplicates folder
+                duplicatesFolder.file(data.fileName, fileBlob);
+            } else {
+                // Place in root folder with the new name
+                zip.file(newFileName, fileBlob);
+            }
+        }
+        
+        // Generate the ZIP file
+        zip.generateAsync({type:"blob"})
+            .then(function(content) {
+                // Use FileSaver API (via an anchor tag trick) to download the file
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(content);
+                link.download = 'Udyam_Certificates_Organized.zip';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                document.getElementById('log').innerHTML = `Status Log: **Files exported to ZIP archive.**`;
+            });
+    }
+</script>
+
+</body>
+</html>
