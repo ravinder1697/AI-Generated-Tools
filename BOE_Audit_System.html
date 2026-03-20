@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BOE Customs Audit System</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.6.0/jspdf.plugin.autotable.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#0d1117;--paper:#f4f1eb;--amber:#d97706;--al:#fbbf24;--ap:#fef3c7;--slate:#1e2a3a;--muted:#6b7280;--border:#d1c9b8;--ok:#059669;--err:#dc2626;--warn:#d97706;--white:#fff;--card:#fff;--section:#f9f7f2}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'IBM Plex Sans',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh}
+header{background:var(--slate);border-bottom:3px solid var(--amber);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:64px;position:sticky;top:0;z-index:100}
+.lb{background:var(--amber);color:var(--ink);font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:11px;padding:4px 8px;letter-spacing:.1em;text-transform:uppercase}
+.lt{color:var(--white);font-size:15px;font-weight:600}.ls{color:var(--al);font-size:11px;font-family:'IBM Plex Mono',monospace;letter-spacing:.08em}
+.hm{color:rgba(255,255,255,.45);font-family:'IBM Plex Mono',monospace;font-size:11px;text-align:right;line-height:1.6}
+.container{max-width:1400px;margin:0 auto;padding:2rem}
+.uz{background:var(--card);border:2px dashed var(--border);border-radius:4px;padding:2.5rem;text-align:center;transition:border-color .2s,background .2s}
+.uz.drag-over{border-color:var(--amber);background:var(--ap)}
+.ui{font-size:3rem;margin-bottom:1rem;display:block}
+.ut{font-size:1.1rem;font-weight:600;color:var(--slate);margin-bottom:.5rem}
+.uh{color:var(--muted);font-size:.85rem;font-family:'IBM Plex Mono',monospace}
+.fl{margin-top:1.5rem;display:flex;flex-direction:column;gap:.5rem}
+.fi{background:var(--section);border:1px solid var(--border);border-left:3px solid var(--amber);padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between;border-radius:2px}
+.fn{font-family:'IBM Plex Mono',monospace;font-size:.8rem;color:var(--slate);font-weight:600}
+.fsz{color:var(--muted);font-size:.75rem;font-family:'IBM Plex Mono',monospace}
+.fst{display:flex;align-items:center;gap:.5rem;font-size:.75rem;font-family:'IBM Plex Mono',monospace}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;background:var(--muted)}
+.dot.processing{background:var(--warn);animation:pulse 1s infinite}
+.dot.done{background:var(--ok)}.dot.error{background:var(--err)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.br{display:flex;gap:1rem;margin-top:1.5rem;flex-wrap:wrap}
+.btn{padding:.7rem 1.5rem;font-family:'IBM Plex Mono',monospace;font-size:.8rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;border:none;cursor:pointer;border-radius:2px;transition:all .15s;display:flex;align-items:center;gap:.5rem}
+.bp{background:var(--amber);color:var(--ink)}.bp:hover{background:#b45309}
+.bs{background:var(--ok);color:var(--white)}.bs:hover{background:#047857}
+.bd{background:var(--slate);color:var(--white)}.bd:hover{background:#0f1f2e}
+.be{background:var(--err);color:var(--white)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.pw{margin-top:1rem;background:var(--border);border-radius:2px;height:6px;overflow:hidden;display:none}
+.pb{height:100%;background:var(--amber);width:0;transition:width .3s;border-radius:2px}
+.rs{margin-top:2rem;display:none}
+.sg{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:2rem}
+.sc{background:var(--card);border:1px solid var(--border);border-top:3px solid var(--amber);padding:1.25rem;border-radius:2px}
+.scl{font-size:.7rem;font-family:'IBM Plex Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem}
+.scv{font-size:1.6rem;font-weight:700;color:var(--slate);font-family:'IBM Plex Mono',monospace}
+.scs{font-size:.7rem;color:var(--muted);margin-top:.25rem;font-family:'IBM Plex Mono',monospace}
+.tabs{display:flex;gap:0;margin-bottom:1.5rem;border-bottom:2px solid var(--border)}
+.tab{padding:.6rem 1.25rem;font-family:'IBM Plex Mono',monospace;font-size:.75rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;border:none;background:none;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
+.tab.active{color:var(--amber);border-bottom-color:var(--amber)}
+.tp{display:none}.tp.active{display:block}
+.sh{display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--ink);padding-bottom:.75rem;margin-bottom:1.5rem}
+.st{font-size:1rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--slate)}
+.ac{color:var(--amber);font-family:'IBM Plex Mono',monospace}
+.tw{overflow-x:auto;border:1px solid var(--border);border-radius:2px}
+table{width:100%;border-collapse:collapse;font-size:.8rem;min-width:900px}
+thead{background:var(--slate);color:var(--white);position:sticky;top:0}
+thead th{padding:.6rem .75rem;text-align:left;font-family:'IBM Plex Mono',monospace;font-size:.7rem;font-weight:600;letter-spacing:.06em;white-space:nowrap;border-right:1px solid rgba(255,255,255,.1)}
+tbody tr{border-bottom:1px solid var(--border)}
+tbody tr:nth-child(even){background:var(--section)}
+tbody tr:hover{background:var(--ap)}
+tbody td{padding:.55rem .75rem;color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:.75rem;white-space:nowrap;border-right:1px solid var(--border)}
+.r{text-align:right}.c{text-align:center}
+.oc{color:var(--ok)}.wc{color:var(--warn)}.ec{color:var(--err)}
+.ai{border:1px solid;padding:.75rem 1rem;border-radius:2px;margin-bottom:.5rem;display:flex;align-items:flex-start;gap:.75rem;font-size:.85rem}
+.ai.warn{border-color:#fcd34d;background:#fffbeb;color:#92400e}
+.ai.pass{border-color:#6ee7b7;background:#ecfdf5;color:#065f46}
+.ai.fail{border-color:#fca5a5;background:#fef2f2;color:#991b1b}
+.ai strong{display:block;font-weight:600;margin-bottom:.15rem}
+.la{background:var(--ink);color:#a3e635;font-family:'IBM Plex Mono',monospace;font-size:.75rem;padding:1rem;border-radius:2px;max-height:250px;overflow-y:auto;line-height:1.6}
+.li{color:#7dd3fc}.lo{color:#86efac}.lw{color:#fde68a}.le{color:#fca5a5}
+@media(max-width:768px){.container{padding:1rem}.sg{grid-template-columns:repeat(2,1fr)}.hm{display:none}}
+</style>
+</head>
+<body>
+<header>
+  <div style="display:flex;align-items:center;gap:12px">
+    <div class="lb">ICEGATE</div>
+    <div><div class="lt">BOE Customs Audit System</div><div class="ls">BILL OF ENTRY · EXTRACTION &amp; COMPLIANCE ENGINE</div></div>
+  </div>
+  <div class="hm">INDIAN CUSTOMS / ICEGATE FORMAT<br>v3.0 · 2026</div>
+</header>
+
+<div class="container">
+  <div class="uz" id="dropZone">
+    <span class="ui">📂</span>
+    <div class="ut">Drop Bill of Entry PDFs here or click below</div>
+    <div class="uh">Multiple files · All ICEGATE BOE types · PDF</div>
+    <label for="fileInput" class="btn bp" style="margin-top:1rem;cursor:pointer;display:inline-flex;align-items:center;gap:.5rem">
+      📁 Browse Files
+    </label>
+    <input type="file" id="fileInput" accept=".pdf" multiple
+           style="position:fixed;top:-9999px;left:-9999px;opacity:0">
+  </div>
+
+  <div class="fl" id="fileList"></div>
+  <div class="pw" id="pw"><div class="pb" id="pb"></div></div>
+
+  <div class="br">
+    <button class="btn bp" id="btnExtract" disabled onclick="extractAll()">⚙ Extract Data</button>
+    <button class="btn bs" id="btnExcel"   disabled onclick="dlExcel()">⬇ Download Excel</button>
+    <button class="btn bd" id="btnPDF"     disabled onclick="dlPDF()">📄 Download PDF</button>
+    <button class="btn be" onclick="clearAll()" style="margin-left:auto">✕ Clear All</button>
+  </div>
+
+  <div class="rs" id="rs">
+    <div class="sg" id="sg"></div>
+    <div class="tabs">
+      <button class="tab active" data-tab="data"  onclick="tab('data')">📊 Extracted Data</button>
+      <button class="tab"        data-tab="audit" onclick="tab('audit')">🔍 Audit Checks</button>
+      <button class="tab"        data-tab="duty"  onclick="tab('duty')">💰 Duty Summary</button>
+      <button class="tab"        data-tab="log"   onclick="tab('log')">🖥 Log</button>
+    </div>
+
+    <div class="tp active" id="tab-data">
+      <div class="sh"><div class="st">Extracted Records <span class="ac" id="rc"></span></div></div>
+      <div class="tw"><table>
+        <thead><tr>
+          <th>#</th><th>BE No</th><th>BE Date</th><th>BE Type</th><th>Port</th>
+          <th>Importer</th><th>GSTIN</th><th>AD Code</th>
+          <th>Supplier</th><th>Country Origin</th><th>Port Loading</th>
+          <th>Invoice No</th><th>Invoice Date</th><th>CCY</th>
+          <th>Inv Value</th><th>Exch Rate</th>
+          <th>Item Description</th><th>HSN Code</th><th>Qty</th><th>Unit Price</th>
+          <th>Ass. Value</th><th>BCD</th><th>SWS</th><th>IGST</th><th>Total Duty</th>
+          <th>Challan No</th><th>Duty Paid</th>
+          <th>MAWB No</th><th>MAWB Date</th><th>HAWB No</th><th>HAWB Date</th>
+          <th>WBE No</th><th>WBE Date</th>
+          <th>Containers</th><th>Gross Wt</th><th>Pkgs</th><th>⚑</th>
+        </tr></thead>
+        <tbody id="tb"></tbody>
+      </table></div>
+    </div>
+
+    <div class="tp" id="tab-audit">
+      <div class="sh"><div class="st">Audit Checks <span class="ac" id="ac"></span></div></div>
+      <div id="ar"></div>
+    </div>
+
+    <div class="tp" id="tab-duty">
+      <div class="sh"><div class="st">Duty Summary</div></div>
+      <div id="ds"></div>
+    </div>
+
+    <div class="tp" id="tab-log">
+      <div class="sh"><div class="st">Processing Log</div></div>
+      <div class="la" id="la"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+let UP=[], EX=[];
+
+// ── UTILS ────────────────────────────────────────────────────────────────────
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const sf=s=>{const n=parseFloat(String(s||'').replace(/[,\s₹]/g,''));return isNaN(n)?0:n;};
+const si=s=>{const n=parseInt(String(s||'').replace(/[,\s]/g,''),10);return isNaN(n)?0:n;};
+const dash=s=>(s&&String(s).trim())?esc(String(s).trim()):'—';
+const tr=(s,n)=>!s?'—':String(s).length>n?esc(String(s).slice(0,n))+'…':esc(String(s));
+const fn=n=>n?Number(n).toLocaleString('en-IN',{maximumFractionDigits:2}):'0';
+const td=()=>new Date().toISOString().slice(0,10).replace(/-/g,'');
+const MON={JAN:'01',FEB:'02',MAR:'03',APR:'04',MAY:'05',JUN:'06',JUL:'07',AUG:'08',SEP:'09',OCT:'10',NOV:'11',DEC:'12'};
+
+function nd(d){
+  if(!d)return'';d=String(d).trim();
+  let m=d.match(/^(\d{2})-([A-Z]{3})-(\d{2,4})$/i);
+  if(m){const y=m[3].length===2?'20'+m[3]:m[3];return`${y}-${MON[m[2].toUpperCase()]||'01'}-${m[1]}`;}
+  m=d.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})$/);
+  if(m)return`${m[3]}-${m[2]}-${m[1]}`;
+  return d;
+}
+
+function log(msg,t){
+  const ts=new Date().toTimeString().slice(0,8);
+  const la=document.getElementById('la');
+  const d=document.createElement('div');
+  d.className='l'+(t||'i');
+  d.textContent=`[${ts}] ${msg}`;
+  la.appendChild(d);la.scrollTop=la.scrollHeight;
+}
+
+// ── FILE HANDLING ────────────────────────────────────────────────────────────
+// All event wiring is done at the BOTTOM of this script (after all functions defined).
+// See "INIT" section at end.
+
+function addFiles(files){
+  files.forEach(f=>{if(!UP.find(u=>u.file.name===f.name&&u.file.size===f.size))UP.push({file:f,status:'pending'});});
+  rfl();
+  document.getElementById('btnExtract').disabled=UP.length===0;
+}
+
+function rfl(){
+  document.getElementById('fileList').innerHTML=UP.map((u,i)=>`
+    <div class="fi" id="fi${i}">
+      <div><div class="fn">📄 ${esc(u.file.name)}</div><div class="fsz">${(u.file.size/1024).toFixed(1)} KB</div></div>
+      <div class="fst"><span class="dot ${u.status}" id="fd${i}"></span><span id="ft${i}">${stl(u.status)}</span></div>
+    </div>`).join('');
+}
+
+const stl=s=>({pending:'PENDING',processing:'PROCESSING…',done:'EXTRACTED',error:'ERROR'}[s]||s);
+
+function setSt(i,s){
+  UP[i].status=s;
+  const d=document.getElementById('fd'+i),t=document.getElementById('ft'+i);
+  if(d)d.className='dot '+s;if(t)t.textContent=stl(s);
+}
+
+// ── EXTRACT ──────────────────────────────────────────────────────────────────
+async function extractAll(){
+  EX=[];
+  document.getElementById('btnExtract').disabled=true;
+  document.getElementById('pw').style.display='block';
+  for(let i=0;i<UP.length;i++){
+    setSt(i,'processing');
+    log('Extracting: '+UP[i].file.name,'i');
+    try{
+      const items=await pdfItems(UP[i].file);
+      log('  '+items.length+' items loaded','i');
+      const rec=parseBOE(items,UP[i].file.name);
+      EX.push(rec);
+      setSt(i,'done');
+      log('  BE:'+rec.BE_No+' | Inv:'+(rec.Invoice_No||'—')+' | Qty:'+rec.Quantity+' | Ass:'+rec.Assessable_Value+' | IGST:'+fn(rec.IGST),'o');
+    }catch(e){
+      setSt(i,'error');
+      log('  ERROR: '+e.message,'e');
+    }
+    document.getElementById('pb').style.width=Math.round((i+1)/UP.length*100)+'%';
+  }
+  document.getElementById('btnExtract').disabled=false;
+  document.getElementById('btnExcel').disabled=EX.length===0;
+  document.getElementById('btnPDF').disabled=EX.length===0;
+  log('Done. '+EX.length+'/'+UP.length+' extracted.','o');
+  if(EX.length>0)renderAll();
+}
+
+// ── PDF → ITEMS ──────────────────────────────────────────────────────────────
+function readBuf(file){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=e=>res(e.target.result);
+    r.onerror=()=>rej(new Error('FileReader failed'));
+    r.readAsArrayBuffer(file);
+  });
+}
+
+async function pdfItems(file){
+  const buf=await readBuf(file);
+  const pdf=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;
+  const items=[];
+  for(let p=1;p<=pdf.numPages;p++){
+    const pg=await pdf.getPage(p);
+    const vp=pg.getViewport({scale:1});
+    const tc=await pg.getTextContent({normalizeWhitespace:true});
+    tc.items.forEach(it=>{
+      const t=(it.str||'').trim();
+      if(t)items.push({t,x:Math.round(it.transform[4]),y:Math.round(vp.height-it.transform[5]),p});
+    });
+  }
+  if(!items.length)throw new Error('No text — may be scanned PDF');
+  return items;
+}
+
+// ── CORE PARSER ───────────────────────────────────────────────────────────────
+// All patterns based on confirmed debug logs from real ICEGATE BOE PDFs
+// Token stream sorted page→y→x always begins:
+// [0]Port Code [1]BE No [2]BE Date [3]BE Type
+// [4]<portCode> [5]<beNo> [6]<beDate> [7]<beType>
+// [8]IEC/Br [9]<iec> [10]FIRST/OOC/ASSESSED COPY
+// [11]GSTIN/TYPE [12]<gstin> [13]CB CODE [14]<cbCode>
+// ... [17]TYPE [18]INV [19]ITEM [20]CONT [21]PORT : [22]Nos
+// [23]<#inv> [24]<#item> [25]<#cont>
+// [28]PKG [29]<pkgs> [30]G.WT [31](KGS) [32]<gw>
+
+function parseBOE(items,filename){
+  const srt=[...items].sort((a,b)=>a.p!==b.p?a.p-b.p:a.y!==b.y?a.y-b.y:a.x-b.x);
+  const T=srt.map(it=>it.t.trim()).filter(t=>t.length>0);
+  const FT=T.join(' ');
+  const rows=buildRows(items);
+
+  // PART I HEADER — fixed token positions (100% reliable from debug logs)
+  const portCode=T[4]||'',beNo=T[5]||'',beDate=nd(T[6]||''),beType=T[7]||'';
+  const iec=T[9]||'',gstin=T[12]||'',cbCode=T[14]||'';
+
+  // PKG and G.WT
+  const pkgI=T.indexOf('PKG'),gwI=T.findIndex(t=>t==='(KGS)');
+  const pkg=pkgI>=0?si(T[pkgI+1]):0,gw=gwI>=0?sf(T[gwI+1]):0;
+
+  // STATUS (Section A) — afterLabel helper
+  const AL=(re,sk)=>{
+    sk=sk||0;const idx=T.findIndex(t=>re.test(t));if(idx<0)return'';
+    let c=0;for(let j=idx+1;j<Math.min(idx+30,T.length);j++){if(T[j]&&T[j].trim()){if(c===sk)return T[j];c++;}}return'';
+  };
+  const countryOrigin =AL(/13\.COUNTRY\s*OF\s*ORIGIN/i)||AL(/COUNTRY\s*OF\s*ORIGIN/i)||'';
+  const countryConsign=AL(/14\.COUNTRY\s*OF\s*CONSIGNMENT/i)||AL(/COUNTRY\s*OF\s*CONSIGNMENT/i)||'';
+  const portLoad=AL(/15\.PORT\s*OF\s*LOADING/i)||AL(/PORT\s*OF\s*LOADING/i)||'';
+  const portShip=AL(/16\.PORT\s*OF\s*SHIPMENT/i)||AL(/PORT\s*OF\s*SHIPMENT/i)||'';
+
+  // AD CODE
+  const adI=T.findIndex(t=>/^AD\s*CODE$/i.test(t));
+  const adCode=adI>=0?T[adI+1]||'':'';
+
+  // IMPORTER and SUPPLIER names — row below label, filtered to left of page
+  const NB=(lRe,maxX,ex)=>{
+    for(let ri=0;ri<rows.length;ri++){
+      if(!rows[ri].some(c=>lRe.test(c.t)))continue;
+      for(let j=ri+1;j<=Math.min(ri+4,rows.length-1);j++){
+        const left=rows[j].filter(c=>{
+          if(c.x>maxX||c.t.trim().length<3)return false;
+          if(/^\d{1,2}\.$/.test(c.t))return false;
+          for(const r of(ex||[]))if(r.test(c.t))return false;
+          return true;
+        });
+        if(left.length)return left.map(c=>c.t).join(' ').trim();
+      }
+    }
+    return'';
+  };
+  const importerName=NB(/1\.IMPORTER\s*NAME/i,400,[/^(RG|IEC|GSTIN|CB\s*CODE|2\.CB|3\.AEO|4\.UCR)/i]);
+  const supplierName=NB(/3\.SUPPLIER\s*NAME/i,380,[/^(4\.(THIRD|AEO)|5\.AEO|6\.AD)/i,/^\d{2}(TH|ND|RD|ST)\s*FL/i]);
+
+  // ── INVOICE EXTRACTION ────────────────────────────────────────────────────
+  // Based on confirmed debug log token positions across all ICEGATE BOE types.
+  //
+  // Part I Section I structure (confirmed):
+  //   header row: "1.S NO | 2.INVOICE NO | 3.INV. AMT | 4.CUR"
+  //   data row:   "1      | E2512001308  | 35328       | USD"
+  //
+  // Part II Section A structure:
+  //   "2.INVOICE NO. & DT." → next tokens: <invNo> <invDate>
+  //
+  // IMPORTANT: token[168] "13-FEB-26" is Submission date (after 1.EVENT/Submission),
+  // NOT the invoice date. Invoice date is in Part II only.
+
+  // colVal: finds column header in a row, returns value in same x-column below
+  const CV=(rRe,cRe,xT)=>{
+    xT=xT||55;
+    for(let ri=0;ri<rows.length;ri++){
+      if(!rows[ri].some(c=>rRe.test(c.t)))continue;
+      const col=rows[ri].find(c=>cRe.test(c.t));if(!col)continue;
+      for(let j=ri+1;j<=Math.min(ri+5,rows.length-1);j++){
+        const hit=rows[j].find(c=>Math.abs(c.x-col.x)<=xT);
+        if(hit&&hit.t&&!/^\d{1,2}\.$/.test(hit.t))return hit.t.trim();
+      }
+    }
+    return'';
+  };
+
+  const isDate=t=>/^\d{2}[\/\-]\d{2}[\/\-]\d{4}$/.test(t)||/^\d{2}-(?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)-\d{2,4}$/i.test(t);
+
+  // INVOICE NO + DATE — from Part II "2.INVOICE NO. & DT." label (authoritative)
+  let invNo='', invDate='';
+  const PT2_HDR=/2\.INVOICE\s*NO\.\s*&\s*DT\./i;
+  const pt2Idx=T.findIndex(t=>PT2_HDR.test(t));
+  if(pt2Idx>=0){
+    // Scan next 25 tokens for invoice number then date
+    for(let j=pt2Idx+1;j<Math.min(pt2Idx+25,T.length);j++){
+      const tk=T[j];
+      // Skip numbered labels, keyword tokens
+      if(/^\d{1,2}\./.test(tk)||/^(PURCHASE|ORDER|CONTRACT|LC\s*NO|NO\s*&|&\s*DATE|DT\.)$/i.test(tk))continue;
+      // First non-date, non-numeric, non-label token = invoice number
+      if(!invNo && tk.length>=4 && /[A-Z0-9]/.test(tk) && !/^\d+(\.\d+)?$/.test(tk)
+         && !/^(PURCHASE|CONTRACT|LC|HS|BILL|ENTRY|PART|PORT|RULE|TYPE|SEA|LAND|AIR|INV|ITEM|CONT)/i.test(tk)){
+        invNo=tk; continue;
+      }
+      // First date after invoice no = invoice date
+      if(invNo && !invDate && isDate(tk)){ invDate=nd(tk); break; }
+    }
+  }
+
+  // INVOICE VALUE + CURRENCY — from Part I Section I "3.INV. AMT" column
+  const IH=/3\.INV\.?\s*AMT/i;
+  let invValue=sf(CV(IH,IH));
+  let currency=CV(IH,/^4\.CUR$/i)||'';
+  if(!/^[A-Z]{3}$/.test(currency))currency='USD';
+
+  // Fallback: token-stream pattern scan for [anchor][sno][invNo][amount][ccy]
+  // Confirmed from debug logs: e.g. [WH][1][E2512001308][35328][USD]
+  const EVENT_WORDS=/^(Submission|Assessment|Examination|Finalisation|OOC|1\.EVENT|2\.DATE|3\.TIME|EXCHANGE|RATE)$/i;
+  if(!invNo||invValue===0){
+    const SKIP=/^(FIRST|ASSESSED|OOC|INDIA|COPY|BILL|ENTRY|PART|CUSTOMS|SEA|LAND|AIR|PORT|RULE|TYPE|INV$|ITEM|CONT|WBE|IGM|PKG|IEC|CB|AD|RG|KGS|MTS|EVENT|DATE|TIME|EXCHANGE|RATE|SUBMISSION|ASSESSMENT)/i;
+    for(let k=80;k<T.length-4;k++){
+      const sno=T[k+1]||'',cI=T[k+2]||'',cA=T[k+3]||'',cC=T[k+4]||'';
+      if(!/^\d{1,2}$/.test(sno))continue;
+      if(!cI||!/[A-Z]/i.test(cI)||/^\d+(\.\d+)?$/.test(cI))continue;
+      if(cI.length<4||cI.length>25||SKIP.test(cI))continue;
+      const amt=sf(cA);if(amt<50)continue;
+      if(!/^[A-Z]{3}$/.test(cC))continue;
+      if(!invNo)invNo=cI;
+      if(!invValue)invValue=amt;
+      if(currency==='USD')currency=cC;
+      break;
+    }
+  }
+
+  // Invoice date fallback — search after invNo in Part II area only
+  // NEVER pick dates following Submission/Event/Assessment keywords (those are processing dates)
+  if(!invDate && invNo){
+    const p2=T.findIndex((t,i)=>i>100&&/PART\s*-?\s*II/i.test(t));
+    const from=p2>0?p2:(pt2Idx>0?pt2Idx:150);
+    const ii=T.indexOf(invNo,from);
+    if(ii>=0){
+      for(let j=ii+1;j<Math.min(ii+30,T.length);j++){
+        if(EVENT_WORDS.test(T[j-1]||'')||EVENT_WORDS.test(T[j-2]||''))continue;
+        if(isDate(T[j])){ invDate=nd(T[j]); break; }
+      }
+    }
+  }
+
+  // Exchange rate
+  const exM=FT.match(/1\s*USD\s*=\s*([\d.]+)\s*INR/i);
+  const exchRate=exM?sf(exM[1]):0;
+
+  // DUTY SUMMARY (Section C)
+  const DH=/^1\.BCD$/i;
+  const bcd=sf(CV(DH,/^1\.BCD$/i)),sws=sf(CV(DH,/^3\.SWS$/i)),igst=sf(CV(DH,/^7\.IGST$/i));
+  const totAssV=sf(CV(DH,/18\.TOT\.?ASS/i));
+  const totalDuty=sf(CV(/^19\.TOT\.\s*AMOUNT$/i,/^19\.TOT/i))
+    ||sf(CV(/14\.TOTAL\s*DUTY/i,/14\.TOTAL\s*DUTY/i))
+    ||sf((FT.match(/19\.TOT\.\s*AMOUNT\s+([\d,]+)/i)||[])[1])
+    ||sf((FT.match(/14\.TOTAL\s*DUTY\s+([\d,]+)/i)||[])[1])
+    ||(bcd+sws+igst);
+  // ── ASSESSABLE VALUE ─────────────────────────────────────────────────────
+  // totAssV from colVal on "18.TOT.ASS VAL" column under "1.BCD" header row (Part I C)
+  // DO NOT use flat-text regex: /29.ASSESS VALUE\s+([\d,]+)/ matches "30" from "30. TOTAL DUTY"
+  // Also try: numeric token directly after "29.ASSESS VALUE" skipping non-numerics
+  const assRaw=(()=>{
+    const ai=T.findIndex(t=>/29\.ASSESS(?:ABLE)?\s*VALUE/i.test(t));
+    if(ai>=0){
+      for(let j=ai+1;j<Math.min(ai+15,T.length);j++){
+        const v=sf(T[j]);
+        if(v>1000)return v;  // assessable value always > 1000 INR
+        if(/^30\.|^N$|^Y$|^[A-Z]{1,3}$/.test(T[j]))continue; // skip flags/labels
+      }
+    }
+    return 0;
+  })();
+  const assVal=assRaw||totAssV||(invValue>0&&exchRate>0?Math.round(invValue*exchRate):0);
+
+  // ── ITEM TABLE (Part II Section E) ─────────────────────────────────────────
+  // Token offsets from "3.DESCRIPTION" are 100% consistent across ALL ICEGATE BOE types
+  // Confirmed from debug logs across 28 PDFs:
+  //   di+5=S.No(1)  di+6=HSN  di+7=desc  di+8=unitPrice  di+9=qty  di+10=UQC  di+11=amount
+  const di=T.findIndex(t=>/^3\.DESCRIPTION$/i.test(t));
+  let hsnCode='',itemDesc='',unitPrice=0,quantity=0,itemUQC='MTS';
+  if(di>=0&&di+11<T.length){
+    hsnCode  =T[di+6]||'';
+    itemDesc =T[di+7]||'';
+    unitPrice=sf(T[di+8]);
+    quantity =sf(T[di+9]);
+    itemUQC  =T[di+10]||'MTS';
+  }
+  // Fallback HSN: known chemical CTH codes
+  if(!hsnCode)(hsnCode=(FT.match(/\b(2929\d{4}|3901\d{4}|3902\d{4}|2903\d{4}|3904\d{4}|3909\d{4}|2917\d{4}|2933\d{4}|2915\d{4})\b/)||[])[1]||'');
+  const valMethod=(FT.match(/RULE\s*\d\s*\([^)]+\)/i)||[])[0]||'RULE 4 (TRANSACTION VALUE)';
+
+
+  // ── PAYMENT (Section F) ─────────────────────────────────────────────────
+  // Confirmed token structure across all 28 PDFs:
+  // [chi]2.CHALLAN NO | [chi+1]3.PAID ON | [chi+2]4.AMOUNT(Rs.) | [chi+3]=S.No(1) | [chi+4]=CHALLAN_NO | [chi+5]=date-or-amount | [chi+6]=amount
+  const chi=T.findIndex(t=>/^2\.CHALLAN\s*NO$/i.test(t));
+  const challanNo=chi>=0?T[chi+4]||'':'';
+  const dutyPaid=(()=>{
+    if(chi<0)return 0;
+    for(let j=chi+5;j<Math.min(chi+9,T.length);j++){
+      const v=sf(T[j]);
+      if(v>10000)return v;  // duty paid always > 10000 INR
+    }
+    return 0;
+  })();
+
+  // ── MANIFEST (Section D) ─────────────────────────────────────────────────
+  // Data tokens start at mi+6 (after 6 header label tokens).
+  // Structure varies by port — parse by TOKEN TYPE, not fixed offset.
+  //
+  // KNOWN BUG from debug logs: PDF.js sometimes MERGES adjacent cells:
+  //   e.g. "14/01/2026 WOLSYSE26"  (date + HAWB merged into one token)
+  //   e.g. "UB25121364 07/01/2026"  (HAWB + date merged into one token)
+  // Must detect and split these merged tokens.
+
+  const mi=T.findIndex(t=>/^6\.MAWB\s*NO$/i.test(t));
+  let igmNo='',igmDate='',mawbNo='',mawbDate='',hawbNo='',hawbDate='';
+
+  // Helper: extract a clean alphanumeric reference from a possibly-merged token
+  // e.g. "14/01/2026 WOLSYSE26" → "WOLSYSE26", "UB25121364 07/01/2026" → "UB25121364"
+  function extractRef(tk){
+    // Split on whitespace and find the non-date, non-pure-number part
+    var parts=tk.split(/\s+/);
+    for(var pi=0;pi<parts.length;pi++){
+      var p=parts[pi];
+      if(p && !isDate(p) && /[A-Za-z]/.test(p) && p.length>3) return p;
+    }
+    return '';
+  }
+  // Helper: extract date from a possibly-merged token
+  function extractDate(tk){
+    var m=tk.match(/(\d{2}[\/-]\d{2}[\/-]\d{4})/);
+    if(m) return nd(m[1]);
+    m=tk.match(/(\d{2}-(?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)-\d{2,4})/i);
+    return m?nd(m[1]):'';
+  }
+  // Helper: is a token a MERGED cell (contains both a date pattern AND letters)?
+  function isMerged(tk){
+    return /\d{2}[\/-]\d{2}[\/-]\d{4}/.test(tk) && /[A-Za-z]{2}/.test(tk);
+  }
+
+  if(mi>=0){
+    const data=T.slice(mi+6, mi+32);
+    let mawbFound=false;
+
+    for(let k=0;k<data.length;k++){
+      const tk=data[k];
+      if(!tk||tk==='0')continue;
+
+      // Skip 7-digit IGM/GIGM numbers
+      if(/^\d{7}$/.test(tk))continue;
+      // Skip 4-5 digit numbers (GIGMDT fragments)
+      if(/^\d{4,5}$/.test(tk)&&!mawbFound)continue;
+
+      // MERGED token: contains both date and alphanumeric reference
+      // e.g. "14/01/2026 WOLSYSE26" or "UB25121364 07/01/2026"
+      if(isMerged(tk)){
+        const ref=extractRef(tk);
+        const dt=extractDate(tk);
+        if(ref){
+          if(!mawbFound){ mawbNo=ref; mawbFound=true; if(dt) mawbDate=dt; continue; }
+          // mawbFound but no mawbDate yet → merged token gives mawbDate+hawbNo together
+          if(mawbFound && !mawbDate){ if(dt) mawbDate=dt; hawbNo=ref; continue; }
+          // mawbDate already set → this is hawbNo+hawbDate merged
+          if(mawbFound && mawbDate && !hawbNo){ hawbNo=ref; if(dt) hawbDate=dt; continue; }
+        } else if(!mawbFound){
+          // No ref extracted — treat the date part as MAWB_DATE if mawb found
+          if(mawbFound && !mawbDate){ const dt2=extractDate(tk); if(dt2) mawbDate=dt2; }
+        }
+        continue;
+      }
+
+      // Pure date token
+      if(isDate(tk)){
+        if(!mawbFound)continue;
+        if(!mawbDate){ mawbDate=nd(tk); continue; }
+        if(hawbNo && !hawbDate){ hawbDate=nd(tk); continue; }
+        continue;
+      }
+
+      // Alphanumeric with letters = MAWB or HAWB number
+      if(/[A-Za-z]/.test(tk)||/^\d{10,}$/.test(tk)){
+        if(!mawbFound){ mawbNo=tk; mawbFound=true; continue; }
+        if(mawbDate && !hawbNo){ hawbNo=tk; continue; }
+        continue;
+      }
+
+      // Pure small number after mawb+date = PKG → stop
+      if(mawbFound && mawbDate) break;
+    }
+
+    // IGM_NO: first 7-digit number in data
+    for(let k=0;k<data.length;k++){
+      const tk=data[k];
+      if(tk && /^\d{7}$/.test(tk)){
+        if(!igmNo){ igmNo=tk; break; }
+      }
+    }
+    // IGM_DATE: first date in data
+    for(let k=0;k<data.length;k++){
+      const tk=data[k];
+      if(tk && isDate(tk)){ igmDate=nd(tk); break; }
+    }
+  }
+
+  // ── WBE (Section G) ──────────────────────────────────────────────────────
+  // WBE is blank in regular BOEs. colVal picks up "G." (the section heading).
+  // Only accept if it's a real reference: has letters+digits, length >= 4.
+  const wbeRaw=CV(/1\.WBE\s*NO/i,/1\.WBE\s*NO/i)||'';
+  const wbeNo=(()=>{
+    if(!wbeRaw) return '';
+    if(wbeRaw.length < 4) return '';           // "G." or "G" — too short
+    if(isDate(wbeRaw)) return '';
+    if(/^[G-Z]\.\s*$/i.test(wbeRaw)) return '';  // single letter + dot = section heading
+    if(/^\d{1,2}\.(WBE|DATE|SITE|WH|S\.NO|INVOICE|CUR|AMT)/i.test(wbeRaw)) return '';
+    if(!/[A-Z0-9]/i.test(wbeRaw)) return '';   // must have alphanumeric content
+    return wbeRaw;
+  })();
+  const wbeDateRaw=wbeNo?nd(CV(/1\.WBE\s*NO/i,/^2\.DATE$/i))||'':'';
+  const wbeDate=isDate(wbeDateRaw)?wbeDateRaw:'';
+
+  // Containers
+  const containers=[...new Set((FT.match(/\b[A-Z]{4}\d{7}\b/g)||[]))].join(', ');
+
+  return{
+    _file:filename,
+    BE_No:beNo,BE_Date:beDate,Port_Code:portCode,BE_Type:beType,
+    IEC:iec,GSTIN:gstin,CB_Code:cbCode,
+    Importer_Name:importerName,AD_Code:adCode,
+    Supplier_Name:supplierName,
+    Country_Origin:countryOrigin,Country_Consign:countryConsign,
+    Port_Loading:portLoad,Port_Shipment:portShip,
+    Invoice_No:invNo,Invoice_Date:invDate,Invoice_Currency:currency,
+    Invoice_Value:invValue,Exchange_Rate:exchRate,
+    Item_Description:itemDesc,HSN_Code:hsnCode,
+    Quantity:quantity,UQC:itemUQC,Unit_Price:unitPrice,
+    Assessable_Value:Math.round(assVal),Valuation_Method:valMethod,
+    BCD:bcd,SWS:sws,IGST:igst,Total_Duty:Math.round(totalDuty),
+    Challan_No:challanNo,Duty_Paid:dutyPaid,
+    MAWB_No:mawbNo,MAWB_Date:mawbDate,HAWB_No:hawbNo,HAWB_Date:hawbDate,
+    WBE_No:wbeNo,WBE_Date:wbeDate,
+    Container_No:containers,Gross_Weight:gw,Packages:pkg,
+    IGM_No:igmNo,IGM_Date:igmDate,
+  };
+}
+
+// ── SPATIAL HELPERS ──────────────────────────────────────────────────────────
+function buildRows(items){
+  const srt=[...items].sort((a,b)=>a.p!==b.p?a.p-b.p:a.y!==b.y?a.y-b.y:a.x-b.x);
+  const rows=[],used=new Uint8Array(srt.length);
+  for(let i=0;i<srt.length;i++){
+    if(used[i])continue;
+    const row=[srt[i]];used[i]=1;
+    for(let j=i+1;j<srt.length;j++){
+      if(!used[j]&&srt[j].p===srt[i].p&&Math.abs(srt[j].y-srt[i].y)<=5){row.push(srt[j]);used[j]=1;}
+    }
+    row.sort((a,b)=>a.x-b.x);rows.push(row);
+  }
+  return rows;
+}
+
+// ── RENDER ───────────────────────────────────────────────────────────────────
+function renderAll(){
+  document.getElementById('rs').style.display='block';
+  renderCards();renderTable();renderAudit();renderDuty();
+}
+
+function renderCards(){
+  const D=EX;
+  const tD=D.reduce((a,r)=>a+(r.Total_Duty||0),0),tA=D.reduce((a,r)=>a+(r.Assessable_Value||0),0);
+  const tI=D.reduce((a,r)=>a+(r.IGST||0),0),tV=D.reduce((a,r)=>a+(r.Invoice_Value||0),0);
+  document.getElementById('sg').innerHTML=[
+    ['Total BOEs',D.length,'Processed'],
+    ['Invoice Value','USD '+fn(tV),'Foreign currency'],
+    ['Assessable Value','₹'+fn(tA),'INR'],
+    ['Total IGST','₹'+fn(tI),'Input credit eligible'],
+    ['Total Duty','₹'+fn(tD),'BCD+SWS+IGST'],
+    ['Unique HSN',[...new Set(D.map(r=>r.HSN_Code).filter(Boolean))].length,'Tariff heads'],
+  ].map(([l,v,s])=>`<div class="sc"><div class="scl">${l}</div><div class="scv">${v}</div><div class="scs">${s}</div></div>`).join('');
+}
+
+function renderTable(){
+  document.getElementById('rc').textContent='('+EX.length+')';
+  document.getElementById('tb').innerHTML=EX.map((r,i)=>{
+    const fl=(!r.HSN_Code?'<span class="ec" title="HSN Missing">⚑</span>':'')+(!r.Invoice_No?'<span class="ec" title="Invoice Missing">⚑</span>':'')+(!r.Country_Origin?'<span class="wc" title="Country Missing">⚐</span>':'');
+    return`<tr><td>${i+1}</td>
+      <td><b>${dash(r.BE_No)}</b></td><td>${dash(r.BE_Date)}</td><td>${dash(r.BE_Type)}</td><td>${dash(r.Port_Code)}</td>
+      <td title="${esc(r.Importer_Name)}">${tr(r.Importer_Name,22)}</td><td>${dash(r.GSTIN)}</td><td>${dash(r.AD_Code)}</td>
+      <td title="${esc(r.Supplier_Name)}">${tr(r.Supplier_Name,18)}</td><td>${dash(r.Country_Origin)}</td><td>${dash(r.Port_Loading)}</td>
+      <td><b>${dash(r.Invoice_No)}</b></td><td>${dash(r.Invoice_Date)}</td><td>${dash(r.Invoice_Currency)}</td>
+      <td class="r">${fn(r.Invoice_Value)}</td><td class="r">${r.Exchange_Rate||'—'}</td>
+      <td title="${esc(r.Item_Description)}">${tr(r.Item_Description,25)}</td><td><b>${dash(r.HSN_Code)}</b></td>
+      <td class="r">${fn(r.Quantity)}</td><td class="r">${fn(r.Unit_Price)}</td>
+      <td class="r">₹${fn(r.Assessable_Value)}</td><td class="r">₹${fn(r.BCD)}</td>
+      <td class="r">₹${fn(r.SWS)}</td><td class="r">₹${fn(r.IGST)}</td>
+      <td class="r"><b>₹${fn(r.Total_Duty)}</b></td>
+      <td>${dash(r.Challan_No)}</td><td class="r">₹${fn(r.Duty_Paid)}</td>
+      <td>${dash(r.MAWB_No)}</td><td>${dash(r.MAWB_Date)}</td>
+      <td>${dash(r.HAWB_No)}</td><td>${dash(r.HAWB_Date)}</td>
+      <td>${dash(r.WBE_No)}</td><td>${dash(r.WBE_Date)}</td>
+      <td title="${esc(r.Container_No)}">${tr(r.Container_No,18)}</td>
+      <td class="r">${fn(r.Gross_Weight)}</td><td class="r">${r.Packages||'—'}</td>
+      <td class="c">${fl||'<span class="oc">✓</span>'}</td></tr>`;
+  }).join('');
+}
+
+function renderAudit(){
+  const D=EX,ch=[];
+  const bn=D.map(r=>r.BE_No),dp=bn.filter((v,i)=>v&&bn.indexOf(v)!==i);
+  ch.push(dp.length?{t:'fail',h:'Duplicate BE Numbers',d:'Duplicates: '+[...new Set(dp)].join(', ')}:{t:'pass',h:'No Duplicate BE Numbers',d:'All unique'});
+  D.forEach((r,i)=>{
+    const ref=`BE ${r.BE_No||i+1}`;
+    if(!r.HSN_Code)ch.push({t:'fail',h:`HSN Missing — ${ref}`,d:'CTH code not found'});
+    if(!r.Invoice_No)ch.push({t:'fail',h:`Invoice No Missing — ${ref}`,d:'Not extracted'});
+    if(!r.Country_Origin)ch.push({t:'warn',h:`Country of Origin Missing — ${ref}`,d:'Required for duty preference'});
+    if(r.Invoice_Value&&r.Assessable_Value&&r.Exchange_Rate){
+      const exp=r.Invoice_Value*r.Exchange_Rate,pct=Math.abs(r.Assessable_Value-exp)/exp*100;
+      ch.push(pct>5?{t:'warn',h:`Assessable Value Mismatch — ${ref}`,d:`Inv×Rate=₹${fn(Math.round(exp))} vs Ass.Val=₹${fn(r.Assessable_Value)} (${pct.toFixed(1)}%)`}:{t:'pass',h:`Assessable Value OK — ${ref}`,d:`Tolerance ${pct.toFixed(1)}%`});
+    }
+    if(r.Duty_Paid&&r.Total_Duty){
+      Math.abs(r.Duty_Paid-r.Total_Duty)>100?ch.push({t:'warn',h:`Payment Mismatch — ${ref}`,d:`Paid ₹${fn(r.Duty_Paid)} vs Duty ₹${fn(r.Total_Duty)}`}):ch.push({t:'pass',h:`Payment Matches — ${ref}`,d:`Challan ${r.Challan_No}: ₹${fn(r.Duty_Paid)}`});
+    }
+  });
+  document.getElementById('ac').textContent='('+ch.length+')';
+  const ico={pass:'✅',warn:'⚠️',fail:'❌'};
+  document.getElementById('ar').innerHTML=ch.map(c=>`<div class="ai ${c.t}"><span>${ico[c.t]}</span><div><strong>${esc(c.h)}</strong>${esc(c.d)}</div></div>`).join('');
+}
+
+function renderDuty(){
+  const D=EX;
+  const tB=D.reduce((a,r)=>a+(r.BCD||0),0),tS=D.reduce((a,r)=>a+(r.SWS||0),0);
+  const tI=D.reduce((a,r)=>a+(r.IGST||0),0),tD=D.reduce((a,r)=>a+(r.Total_Duty||0),0);
+  const tA=D.reduce((a,r)=>a+(r.Assessable_Value||0),0),tP=D.reduce((a,r)=>a+(r.Duty_Paid||0),0);
+  document.getElementById('ds').innerHTML=`
+    <div class="sg" style="margin-bottom:1.5rem">
+      <div class="sc"><div class="scl">BCD</div><div class="scv">₹${fn(tB)}</div></div>
+      <div class="sc"><div class="scl">SWS</div><div class="scv">₹${fn(tS)}</div></div>
+      <div class="sc"><div class="scl">IGST</div><div class="scv">₹${fn(tI)}</div></div>
+      <div class="sc"><div class="scl">Total Duty</div><div class="scv" style="color:var(--amber)">₹${fn(tD)}</div></div>
+      <div class="sc"><div class="scl">Duty Paid</div><div class="scv">₹${fn(tP)}</div></div>
+      <div class="sc"><div class="scl">Effective Rate</div><div class="scv">${tA?(tD/tA*100).toFixed(2)+'%':'—'}</div><div class="scs">on Assessable Value</div></div>
+    </div>
+    <div class="tw"><table>
+      <thead><tr><th>#</th><th>BE No</th><th>BE Date</th><th>Importer</th><th>Ass.Value</th><th>BCD</th><th>SWS</th><th>IGST</th><th>Total Duty</th><th>Challan</th><th>Paid</th></tr></thead>
+      <tbody>${D.map((r,i)=>`<tr><td>${i+1}</td><td>${dash(r.BE_No)}</td><td>${dash(r.BE_Date)}</td><td>${tr(r.Importer_Name,20)}</td>
+        <td class="r">₹${fn(r.Assessable_Value)}</td><td class="r">₹${fn(r.BCD)}</td><td class="r">₹${fn(r.SWS)}</td>
+        <td class="r">₹${fn(r.IGST)}</td><td class="r"><b>₹${fn(r.Total_Duty)}</b></td>
+        <td>${dash(r.Challan_No)}</td><td class="r">₹${fn(r.Duty_Paid)}</td></tr>`).join('')}
+      <tr style="font-weight:700;background:var(--ap)"><td colspan="4">TOTAL</td>
+        <td class="r">₹${fn(tA)}</td><td class="r">₹${fn(tB)}</td><td class="r">₹${fn(tS)}</td>
+        <td class="r">₹${fn(tI)}</td><td class="r">₹${fn(tD)}</td><td></td><td class="r">₹${fn(tP)}</td>
+      </tr></tbody>
+    </table></div>`;
+}
+
+// ── EXCEL ────────────────────────────────────────────────────────────────────
+function dlExcel(){
+  if(!EX.length)return;
+  const wb=XLSX.utils.book_new();
+  const cols=['BE_No','BE_Date','BE_Type','Port_Code','IEC','GSTIN','CB_Code',
+    'Importer_Name','AD_Code','Supplier_Name','Country_Origin','Country_Consign',
+    'Port_Loading','Port_Shipment','Invoice_No','Invoice_Date','Invoice_Currency',
+    'Invoice_Value','Exchange_Rate','Item_Description','HSN_Code','Quantity','UQC',
+    'Unit_Price','Assessable_Value','Valuation_Method','BCD','SWS','IGST','Total_Duty',
+    'Challan_No','Duty_Paid','MAWB_No','MAWB_Date','HAWB_No','HAWB_Date',
+    'WBE_No','WBE_Date','Container_No','Gross_Weight','Packages','IGM_No','IGM_Date'];
+  const rows=EX.map(r=>cols.reduce((o,c)=>{o[c]=r[c]??'';return o;},{}));
+  const ws=XLSX.utils.json_to_sheet(rows,{header:cols});
+  ws['!cols']=cols.map(c=>({wch:{Importer_Name:35,Item_Description:40,Supplier_Name:30}[c]||16}));
+  XLSX.utils.book_append_sheet(wb,ws,'BOE Data');
+  const dRows=EX.map(r=>({'BE No':r.BE_No,'BE Date':r.BE_Date,'BE Type':r.BE_Type,'Port':r.Port_Code,
+    'Importer':r.Importer_Name,'Invoice No':r.Invoice_No,'Inv Value':r.Invoice_Value,
+    'Currency':r.Invoice_Currency,'Exch Rate':r.Exchange_Rate,
+    'Assessable Value':r.Assessable_Value,'BCD':r.BCD,'SWS':r.SWS,'IGST':r.IGST,
+    'Total Duty':r.Total_Duty,'Challan No':r.Challan_No,'Duty Paid':r.Duty_Paid}));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(dRows),'Duty Summary');
+  const D=EX;
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([
+    ['BOE CUSTOMS AUDIT SUMMARY'],['Generated',new Date().toLocaleString('en-IN')],['Total BOEs',D.length],[],
+    ['Total Invoice Value (USD)',D.reduce((a,r)=>a+(r.Invoice_Value||0),0)],
+    ['Total Assessable Value (INR)',D.reduce((a,r)=>a+(r.Assessable_Value||0),0)],
+    ['Total BCD',D.reduce((a,r)=>a+(r.BCD||0),0)],['Total SWS',D.reduce((a,r)=>a+(r.SWS||0),0)],
+    ['Total IGST',D.reduce((a,r)=>a+(r.IGST||0),0)],['Total Duty',D.reduce((a,r)=>a+(r.Total_Duty||0),0)],
+    ['Total Duty Paid',D.reduce((a,r)=>a+(r.Duty_Paid||0),0)],
+  ]),'Audit Summary');
+  XLSX.writeFile(wb,`BOE_Audit_${td()}.xlsx`);log('Excel exported','o');
+}
+
+// ── PDF ──────────────────────────────────────────────────────────────────────
+function dlPDF(){
+  if(!EX.length)return;
+  const{jsPDF}=window.jspdf,doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a3'});
+  const W=doc.internal.pageSize.getWidth(),D=EX;
+  doc.setFillColor(30,42,58);doc.rect(0,0,W,26,'F');
+  doc.setTextColor(251,191,36);doc.setFontSize(16);doc.setFont('helvetica','bold');
+  doc.text('BILL OF ENTRY — CUSTOMS AUDIT REPORT',14,13);
+  doc.setFontSize(8);doc.setTextColor(180,200,220);
+  doc.text(`Generated: ${new Date().toLocaleString('en-IN')}  |  Total BOEs: ${D.length}`,14,21);
+  doc.autoTable({startY:34,head:[['Metric','Value']],tableWidth:130,
+    body:[['Total Invoice Value (USD)','USD '+fn(D.reduce((a,r)=>a+(r.Invoice_Value||0),0))],
+      ['Total Assessable Value (INR)','₹ '+fn(D.reduce((a,r)=>a+(r.Assessable_Value||0),0))],
+      ['Total BCD','₹ '+fn(D.reduce((a,r)=>a+(r.BCD||0),0))],
+      ['Total IGST','₹ '+fn(D.reduce((a,r)=>a+(r.IGST||0),0))],
+      ['Total Customs Duty','₹ '+fn(D.reduce((a,r)=>a+(r.Total_Duty||0),0))]],
+    styles:{fontSize:9,cellPadding:3},headStyles:{fillColor:[30,42,58],textColor:[255,255,255],fontStyle:'bold'},
+    columnStyles:{1:{halign:'right',fontStyle:'bold'}},margin:{left:14}});
+  let y=doc.lastAutoTable.finalY+10;
+  doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(30,42,58);
+  doc.text('BOE DATA',14,y);y+=4;
+  doc.autoTable({startY:y,
+    head:[['BE No','Date','Type','Port','Importer','Invoice No','Inv Val','CCY','Item','HSN','Qty','Ass.Val','BCD','IGST','Duty']],
+    body:D.map(r=>[r.BE_No,r.BE_Date,r.BE_Type,r.Port_Code,(r.Importer_Name||'').slice(0,22),
+      r.Invoice_No||'—',fn(r.Invoice_Value),r.Invoice_Currency,(r.Item_Description||'').slice(0,20),
+      r.HSN_Code||'—',fn(r.Quantity),'₹'+fn(r.Assessable_Value),'₹'+fn(r.BCD),'₹'+fn(r.IGST),'₹'+fn(r.Total_Duty)]),
+    styles:{fontSize:6.5,cellPadding:2,overflow:'linebreak'},
+    headStyles:{fillColor:[30,42,58],textColor:[255,255,255],fontStyle:'bold',fontSize:6.5},
+    alternateRowStyles:{fillColor:[249,247,242]},margin:{left:14,right:14}});
+  y=doc.lastAutoTable.finalY+10;
+  if(y>doc.internal.pageSize.getHeight()-50){doc.addPage();y=20;}
+  doc.text('MANIFEST DETAILS',14,y);y+=4;
+  doc.autoTable({startY:y,
+    head:[['BE No','Date','Type','MAWB No','MAWB Date','HAWB No','HAWB Date','WBE No','WBE Date','Containers','GW','Pkgs']],
+    body:D.map(r=>[r.BE_No,r.BE_Date,r.BE_Type,r.MAWB_No||'—',r.MAWB_Date||'—',
+      r.HAWB_No||'—',r.HAWB_Date||'—',r.WBE_No||'—',r.WBE_Date||'—',
+      (r.Container_No||'—').slice(0,25),fn(r.Gross_Weight),r.Packages||'—']),
+    styles:{fontSize:6.5,cellPadding:2,overflow:'linebreak'},
+    headStyles:{fillColor:[30,42,58],textColor:[255,255,255],fontStyle:'bold',fontSize:6.5},
+    alternateRowStyles:{fillColor:[249,247,242]},margin:{left:14,right:14}});
+  const pg=doc.internal.getNumberOfPages();
+  for(let i=1;i<=pg;i++){doc.setPage(i);doc.setFontSize(7);doc.setTextColor(150);
+    doc.text(`Page ${i} of ${pg}  |  BOE Customs Audit System`,14,doc.internal.pageSize.getHeight()-5);}
+  doc.save(`BOE_Audit_${td()}.pdf`);log('PDF exported','o');
+}
+
+// ── UI ───────────────────────────────────────────────────────────────────────
+function tab(id){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.getAttribute('data-tab')===id));
+  document.querySelectorAll('.tp').forEach(p=>p.classList.toggle('active',p.id==='tab-'+id));
+}
+
+function clearAll(){
+  UP=[];EX=[];
+  ['fileList','la','tb','ar','ds','sg'].forEach(id=>{const e=document.getElementById(id);if(e)e.innerHTML='';});
+  document.getElementById('pw').style.display='none';
+  document.getElementById('pb').style.width='0';
+  document.getElementById('rs').style.display='none';
+  ['btnExtract','btnExcel','btnPDF'].forEach(id=>document.getElementById(id).disabled=true);
+  const fi=document.getElementById('fileInput');if(fi)fi.value='';
+}
+
+// ── INIT: Wire all events here, after all functions are defined ───────────
+// Script is at end of <body> so DOM is fully built when this runs.
+// Using addEventListener (not inline handlers) to avoid CSP restrictions.
+(function(){
+  var fi = document.getElementById('fileInput');
+  var dz = document.getElementById('dropZone');
+
+  if(fi){
+    fi.addEventListener('change', function(){
+      if(this.files && this.files.length > 0){
+        addFiles(Array.from(this.files));
+        this.value = '';
+      }
+    });
+  }
+
+  if(dz){
+    dz.addEventListener('dragover', function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      dz.classList.add('drag-over');
+    });
+    dz.addEventListener('dragleave', function(e){
+      e.stopPropagation();
+      if(!dz.contains(e.relatedTarget)) dz.classList.remove('drag-over');
+    });
+    dz.addEventListener('drop', function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      dz.classList.remove('drag-over');
+      if(e.dataTransfer && e.dataTransfer.files){
+        addFiles(Array.from(e.dataTransfer.files).filter(function(f){
+          return f.name.toLowerCase().endsWith('.pdf');
+        }));
+      }
+    });
+  }
+})();
+</script>
+</body>
+</html>
